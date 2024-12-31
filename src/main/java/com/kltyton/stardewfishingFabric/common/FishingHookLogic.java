@@ -6,7 +6,6 @@ import com.kltyton.stardewfishingFabric.server.FishBehaviorReloadListener;
 import io.netty.buffer.Unpooled;
 import koala.fishingreal.FishingReal;
 import net.fabricmc.loader.api.FabricLoader;
-import net.jobsaddon.jobs.JobHelper;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.stats.Stats;
@@ -42,9 +41,6 @@ public class FishingHookLogic {
                 hook.level().addFreshEntity(FishingReal.convertItemEntity(itemEntity, player));
             } else {
                 hook.level().addFreshEntity(itemEntity);
-            }
-            if (FabricLoader.getInstance().isModLoaded("jobsaddon")) {
-                JobHelper.addFisherXp(player, items);
             }
             player.level().addFreshEntity(new ExperienceOrb(player.level(), player.getX(), player.getY() + 0.5, player.getZ() + 0.5, hook.random.nextInt(6) + 1));
             if (items.is(ItemTags.FISHES)) {

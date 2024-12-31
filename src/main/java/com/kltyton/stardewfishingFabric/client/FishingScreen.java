@@ -97,7 +97,7 @@ public class FishingScreen extends Screen {
             poseStack.popPose();
         } else {
             // 变暗 screen
-            renderBackground(pGuiGraphics);
+            renderBackground(pGuiGraphics, 0,0,0);
 
             RenderUtil.drawWithShake(poseStack, shake, partialTick, status == Status.SUCCESS || status == Status.FAILURE, () -> {
                 RenderUtil.drawWithBlend(() -> {
