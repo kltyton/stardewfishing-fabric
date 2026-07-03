@@ -1,6 +1,6 @@
 package com.kltyton.stardewfishingFabric.client.util;
 
-import net.minecraft.util.Mth;
+import net.minecraft.util.math.MathHelper;
 
 import java.util.Random;
 
@@ -33,8 +33,8 @@ public class Shake {
             lastY = y;
 
             while (distSqr() < strengthSqr) {
-                x = Mth.clamp(lastX + random.nextFloat(-strength, strength), -strength, strength);
-                y = Mth.clamp(lastY + random.nextFloat(-strength, strength), -strength, strength);
+                x = MathHelper.clamp(lastX + random.nextFloat(-strength, strength), -strength, strength);
+                y = MathHelper.clamp(lastY + random.nextFloat(-strength, strength), -strength, strength);
             }
         }
     }

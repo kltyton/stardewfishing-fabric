@@ -1,6 +1,6 @@
 package com.kltyton.stardewfishingFabric.client.util;
 
-import net.minecraft.util.Mth;
+import net.minecraft.util.math.MathHelper;
 
 public class Animation {
     private float lastValue;
@@ -22,12 +22,12 @@ public class Animation {
     }
 
     public void addValue(float addition, float min, float max) {
-        setValue(Mth.clamp(value + addition, min, max));
+        setValue(MathHelper.clamp(value + addition, min, max));
     }
 
     public float getInterpolated(float partialTick) {
         if (frozen) return value;
-        return Mth.lerp(partialTick, lastValue, value);
+        return MathHelper.lerp(partialTick, lastValue, value);
     }
 
     public void freeze() {

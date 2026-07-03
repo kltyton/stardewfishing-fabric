@@ -2,8 +2,10 @@ package com.kltyton.stardewfishingFabric.common;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.util.Mth;
+import net.minecraft.network.RegistryByteBuf;
+import net.minecraft.network.codec.PacketCodec;
+import net.minecraft.network.codec.PacketCodecs;
+import net.minecraft.util.math.MathHelper;
 
 import java.util.Random;
 
@@ -24,20 +26,17 @@ public record FishBehavior(
             Codec.INT.fieldOf("move_variation").forGetter(FishBehavior::moveVariation)
     ).apply(inst, FishBehavior::new));
 
+    public static final PacketCodec<RegistryByteBuf, FishBehavior> PACKET_CODEC = PacketCodec.tuple(
+            PacketCodecs.VAR_INT, FishBehavior::idleTime,
+            PacketCodecs.FLOAT, FishBehavior::topSpeed,
+            PacketCodecs.FLOAT, FishBehavior::upAcceleration,
+            PacketCodecs.FLOAT, FishBehavior::downAcceleration,
+            PacketCodecs.VAR_INT, FishBehavior::avgDistance,
+            PacketCodecs.VAR_INT, FishBehavior::moveVariation,
+            FishBehavior::new
+    );
+
     public static final int MAX_HEIGHT = 127;
-
-    public FishBehavior(FriendlyByteBuf buf) {
-        this(buf.readVarInt(), buf.readFloat(), buf.readFloat(), buf.readFloat(), buf.readVarInt(), buf.readVarInt());
-    }
-
-    public void writeToBuffer(FriendlyByteBuf buf) {
-        buf.writeVarInt(idleTime);
-        buf.writeFloat(topSpeed);
-        buf.writeFloat(upAcceleration);
-        buf.writeFloat(downAcceleration);
-        buf.writeVarInt(avgDistance);
-        buf.writeVarInt(moveVariation);
-    }
 
     public boolean shouldMoveNow(int idleTicks, Random random) {
         if (idleTime == 0) return true;
@@ -72,6 +71,6 @@ public record FishBehavior(
 
         int distance = random.nextInt(shortestDistance, longestDistance + 1);
 
-        return Mth.clamp(oldPos + distance * (goingUp ? 1 : -1), 0, MAX_HEIGHT);
+        return MathHelper.clamp(oldPos + distance * (goingUp ? 1 : -1), 0, MAX_HEIGHT);
     }
 }

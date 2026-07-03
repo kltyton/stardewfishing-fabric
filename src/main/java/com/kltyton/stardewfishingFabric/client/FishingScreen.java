@@ -7,21 +7,20 @@ import com.kltyton.stardewfishingFabric.client.util.Shake;
 import com.kltyton.stardewfishingFabric.common.FishBehavior;
 import com.kltyton.stardewfishingFabric.common.networking.C2SCompleteMinigamePacket;
 import com.kltyton.stardewfishingFabric.common.networking.SFNetworking;
-import com.mojang.blaze3d.vertex.PoseStack;
-import io.netty.buffer.Unpooled;
-import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.resources.sounds.SimpleSoundInstance;
-import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.sounds.SoundEvent;
-import net.minecraft.util.Mth;
+import net.minecraft.client.gui.DrawContext;
+import net.minecraft.client.gui.Click;
+import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.client.sound.PositionedSoundInstance;
+import net.minecraft.item.ItemStack;
+import net.minecraft.sound.SoundEvent;
+import net.minecraft.text.Text;
+import net.minecraft.util.Identifier;
+import net.minecraft.util.math.MathHelper;
 import org.lwjgl.glfw.GLFW;
 
 public class FishingScreen extends Screen {
-    private static final Component TITLE = Component.literal("钓鱼小游戏");
-    private static final ResourceLocation TEXTURE = new ResourceLocation(StardewfishingFabric.MODID, "textures/minigame.png");
+    private static final Text TITLE = Text.literal("钓鱼小游戏");
+    private static final Identifier TEXTURE = Identifier.of(StardewfishingFabric.MODID, "textures/minigame.png");
 
     // GUI尺寸常量
     private static final int GUI_WIDTH = 38;
@@ -34,8 +33,8 @@ public class FishingScreen extends Screen {
     // 透明度变化速率
     private static final float ALPHA_PER_TICK = 1F / 10;
     // 手柄旋转速度
-    private static final float HANDLE_ROT_FAST = Mth.PI / 3;
-    private static final float HANDLE_ROT_SLOW = Mth.PI / -7F;
+    private static final float HANDLE_ROT_FAST = MathHelper.PI / 3;
+    private static final float HANDLE_ROT_SLOW = MathHelper.PI / -7F;
 
     // 卷线声音计时器长度
     private static final int REEL_FAST_LENGTH = 30;
@@ -46,6 +45,8 @@ public class FishingScreen extends Screen {
     private int leftPos, topPos;
     // 小游戏逻辑
     private final FishingMinigame minigame;
+    // 预览物品
+    private final ItemStack previewItem;
     // 小游戏状态
     public Status status = Status.HIT_TEXT;
     // 钓鱼准确度
@@ -72,58 +73,58 @@ public class FishingScreen extends Screen {
     private int creakSoundTimer = 0;
 
     // 构造函数，初始化小游戏
-    public FishingScreen(FishBehavior behavior) {
+    public FishingScreen(FishBehavior behavior, ItemStack previewItem) {
         super(TITLE);
         this.minigame = new FishingMinigame(this, behavior);
+        this.previewItem = previewItem == null ? ItemStack.EMPTY : previewItem.copy();
         this.progressBar = new Animation(minigame.getProgress());
     }
 
     // 渲染方法
     @Override
-    public void render(GuiGraphics pGuiGraphics, int pMouseX, int pMouseY, float pPartialTick) {
-        final float partialTick = minecraft.getFrameTime();
+    public void render(DrawContext context, int mouseX, int mouseY, float delta) {
+        final float partialTick = delta;
+        var matrices = context.getMatrices();
 
-        PoseStack poseStack = pGuiGraphics.pose();
-
-        if (!isPauseScreen()) {
+        if (!shouldPause()) {
             // render HIT!
             float scale = textSize.getInterpolated(partialTick) * 1.5F;
             float x = (width - HIT_WIDTH * scale) / 2;
             float y = (height - HIT_HEIGHT * scale) / 3;
 
-            poseStack.pushPose();
-            poseStack.scale(scale, scale, 1);
-            RenderUtil.blitF(pGuiGraphics, TEXTURE, x * (1 / scale), y * (1 / scale), 71, 0, HIT_WIDTH, HIT_HEIGHT);
-            poseStack.popPose();
+            matrices.pushMatrix();
+            matrices.scale(scale, scale);
+            RenderUtil.blitF(context, TEXTURE, x * (1 / scale), y * (1 / scale), 71, 0, HIT_WIDTH, HIT_HEIGHT);
+            matrices.popMatrix();
         } else {
-            // 变暗 screen
-            renderBackground(pGuiGraphics);
+            // 变暗 screen, avoid Screen.renderBackground() blur on 1.21.11
+            context.fill(0, 0, width, height, 0xB0000000);
 
-            RenderUtil.drawWithShake(poseStack, shake, partialTick, status == Status.SUCCESS || status == Status.FAILURE, () -> {
+            RenderUtil.drawWithShake(matrices, shake, partialTick, status == Status.SUCCESS || status == Status.FAILURE, () -> {
                 RenderUtil.drawWithBlend(() -> {
                     // draw 钓鱼 GUI
-                    pGuiGraphics.blit(TEXTURE, leftPos, topPos, 0, 0, GUI_WIDTH, GUI_HEIGHT);
+                    RenderUtil.blitF(context, TEXTURE, leftPos, topPos, 0, 0, GUI_WIDTH, GUI_HEIGHT);
 
                     // draw 浮标
                     RenderUtil.drawWithAlpha(bobberAlpha.getInterpolated(partialTick), () -> {
                         float bobberY = 4 - 36 + (142 - bobberPos.getInterpolated(partialTick));
-                        RenderUtil.blitF(pGuiGraphics, TEXTURE, leftPos + 18, topPos + bobberY, 38, 0, 9, 36);
+                        RenderUtil.blitF(context, TEXTURE, leftPos + 18, topPos + bobberY, 38, 0, 9, 36);
                     });
                 });
 
-                RenderUtil.drawWithShake(poseStack, shake, partialTick, minigame.isBobberOnFish() && status == Status.MINIGAME, () -> {
+                RenderUtil.drawWithShake(matrices, shake, partialTick, minigame.isBobberOnFish() && status == Status.MINIGAME, () -> {
                     // draw 鱼
                     float fishY = 4 - 16 + (142 - fishPos.getInterpolated(partialTick));
-                    RenderUtil.blitF(pGuiGraphics, TEXTURE, leftPos + 14, topPos + fishY, 55, 0, 16, 15);
+                    RenderUtil.blitF(context, TEXTURE, leftPos + 14, topPos + fishY, 55, 0, 16, 15);
                 });
 
                 // draw 进度条
                 float progress = progressBar.getInterpolated(partialTick);
-                int color = Mth.hsvToRgb(progress / 3.0F, 1.0F, 1.0F) | 0xFF000000;
-                RenderUtil.fillF(pGuiGraphics, leftPos + 33, topPos + 148, leftPos + 37, topPos + 148 - progress * 145, 0, color);
+                int color = MathHelper.hsvToRgb(progress / 3.0F, 1.0F, 1.0F) | 0xFF000000;
+                RenderUtil.fillF(context, leftPos + 33, topPos + 148, leftPos + 37, topPos + 148 - progress * 145, 0, color);
 
                 // draw 处理
-                RenderUtil.drawRotatedAround(poseStack, handleRot.getInterpolated(partialTick), leftPos + 6.5F, topPos + 130.5F, () -> pGuiGraphics.blit(TEXTURE, leftPos + 5, topPos + 129, 47, 0, 8, 3));
+                RenderUtil.drawRotatedAround(matrices, handleRot.getInterpolated(partialTick), leftPos + 6.5F, topPos + 130.5F, () -> RenderUtil.blitF(context, TEXTURE, leftPos + 5, topPos + 129, 47, 0, 8, 3));
 
                 // render 完美!
                 if (status == Status.SUCCESS && accuracy == 1) {
@@ -131,13 +132,27 @@ public class FishingScreen extends Screen {
                     float x = leftPos + 2 + (PERFECT_WIDTH - PERFECT_WIDTH * scale) / 2;
                     float y = topPos - PERFECT_HEIGHT * scale;
 
-                    poseStack.pushPose();
-                    poseStack.scale(scale, scale, 1);
-                    RenderUtil.blitF(pGuiGraphics, TEXTURE, x * (1 / scale), y * (1 / scale), 144, 0, PERFECT_WIDTH, PERFECT_HEIGHT);
-                    poseStack.popPose();
+                    matrices.pushMatrix();
+                    matrices.scale(scale, scale);
+                    RenderUtil.blitF(context, TEXTURE, x * (1 / scale), y * (1 / scale), 144, 0, PERFECT_WIDTH, PERFECT_HEIGHT);
+                    matrices.popMatrix();
                 }
             });
         }
+
+        renderPreviewItem(context);
+    }
+
+    private void renderPreviewItem(DrawContext context) {
+        if (previewItem.isEmpty()) {
+            return;
+        }
+
+        int slotX = width / 2 - 9;
+        int slotY = topPos - 28;
+
+        context.fill(slotX - 3, slotY - 3, slotX + 19, slotY + 19, 0x66000000);
+        context.drawItem(previewItem, slotX, slotY);
     }
     // 初始化方法
     @Override
@@ -190,7 +205,7 @@ public class FishingScreen extends Screen {
             }
             case SUCCESS, FAILURE -> {
                 if (--animationTimer == 0) {
-                    onClose();
+                    close();
                 } else if (animationTimer >= 15) {
                     textSize.addValue(0.2F);
                 } else if (animationTimer >= 5) {
@@ -203,42 +218,36 @@ public class FishingScreen extends Screen {
     }
     // 鼠标点击事件
     @Override
-    public boolean mouseClicked(double pMouseX, double pMouseY, int pButton) {
-        if (pButton == GLFW.GLFW_MOUSE_BUTTON_1 || pButton == GLFW.GLFW_MOUSE_BUTTON_2) {
-            if (!mouseDown) {
+    public boolean mouseClicked(Click click, boolean handled) {
+        if (click.button() == GLFW.GLFW_MOUSE_BUTTON_1 || click.button() == GLFW.GLFW_MOUSE_BUTTON_2) {
+            if (status == Status.MINIGAME && !mouseDown) {
                 playSound(StardewfishingFabric.REEL_CREAK);
                 mouseDown = true;
             }
             return true;
         } else {
-            return super.mouseClicked(pMouseX, pMouseY, pButton);
+            return super.mouseClicked(click, handled);
         }
     }
     // 鼠标释放事件
     @Override
-    public boolean mouseReleased(double pMouseX, double pMouseY, int pButton) {
-        if (pButton == GLFW.GLFW_MOUSE_BUTTON_1 || pButton == GLFW.GLFW_MOUSE_BUTTON_2) {
-            if (mouseDown) {
+    public boolean mouseReleased(Click click) {
+        if (click.button() == GLFW.GLFW_MOUSE_BUTTON_1 || click.button() == GLFW.GLFW_MOUSE_BUTTON_2) {
+            if (status == Status.MINIGAME && mouseDown) {
                 mouseDown = false;
             }
             return true;
         } else {
-            return super.mouseReleased(pMouseX, pMouseY, pButton);
+            return super.mouseReleased(click);
         }
     }
     // 关闭屏幕时发送完成包
     @Override
-    public void onClose() {
-        super.onClose();
+    public void close() {
+        super.close();
 
-        // 创建数据包缓冲区
-        FriendlyByteBuf buf = new FriendlyByteBuf(Unpooled.buffer());
-        // 创建数据包对象
-        C2SCompleteMinigamePacket packet = new C2SCompleteMinigamePacket(status == Status.SUCCESS, accuracy);
-        // 编码数据包
-        packet.encode(buf);
-        // 发送数据包到服务器
-        SFNetworking.sendToServer(buf);
+        // 发送完成结果给服务器
+        SFNetworking.sendToServer(new C2SCompleteMinigamePacket(status == Status.SUCCESS, accuracy));
 
         stopReelingSounds();
     }
@@ -249,14 +258,14 @@ public class FishingScreen extends Screen {
     }
     // 是否是暂停屏幕
     @Override
-    public boolean isPauseScreen() {
+    public boolean shouldPause() {
         return status != Status.HIT_TEXT;
     }
     // 设置结果和状态
     public void setResult(boolean success, double accuracy) {
         status = success ? Status.SUCCESS : Status.FAILURE;
         this.accuracy = accuracy;
-        animationTimer = 20;
+        animationTimer = 40;
         textSize.reset(0.0F);
 
         progressBar.freeze();
@@ -270,12 +279,12 @@ public class FishingScreen extends Screen {
     }
     // 播放声音
     public void playSound(SoundEvent soundEvent) {
-        minecraft.getSoundManager().play(SimpleSoundInstance.forUI(soundEvent, 1.0F));
+        client.getSoundManager().play(PositionedSoundInstance.ui(soundEvent, 1.0F));
     }
     // 停止卷线声音
     public void stopReelingSounds() {
-        minecraft.getSoundManager().stop(StardewfishingFabric.REEL_FAST.getLocation(), null);
-        minecraft.getSoundManager().stop(StardewfishingFabric.REEL_SLOW.getLocation(), null);
+        client.getSoundManager().stopSounds(StardewfishingFabric.REEL_FAST.id(), null);
+        client.getSoundManager().stopSounds(StardewfishingFabric.REEL_SLOW.id(), null);
     }
     // 小游戏状态枚举
     public enum Status {

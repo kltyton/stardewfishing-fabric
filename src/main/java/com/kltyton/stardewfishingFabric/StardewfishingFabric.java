@@ -1,24 +1,25 @@
 package com.kltyton.stardewfishingFabric;
 
 import com.kltyton.stardewfishingFabric.common.CommonEvents;
-import com.kltyton.stardewfishingFabric.common.networking.C2SCompleteMinigamePacket;
+import com.kltyton.stardewfishingFabric.common.networking.SFNetworking;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.event.registry.FabricRegistryBuilder;
-import net.minecraft.core.Registry;
-import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.sounds.SoundEvent;
-import net.minecraft.tags.TagKey;
-import net.minecraft.world.item.Item;
+import net.minecraft.registry.Registry;
+import net.minecraft.registry.RegistryKey;
+import net.minecraft.registry.RegistryKeys;
+import net.minecraft.registry.Registries;
+import net.minecraft.sound.SoundEvent;
+import net.minecraft.registry.tag.TagKey;
+import net.minecraft.item.Item;
+import net.minecraft.util.Identifier;
 
 public class StardewfishingFabric implements ModInitializer {
     /*
         常量定义
     */
     public static final String MODID = "stardew_fishing";
-    public static final ResourceKey<Registry<SoundEvent>> SOUND_EVENT_REGISTRY_KEY = ResourceKey.createRegistryKey(new ResourceLocation(MODID, "sound_events"));
-    public static final TagKey<Item> STARTS_MINIGAME = TagKey.create(BuiltInRegistries.ITEM.key(), new ResourceLocation(MODID, "starts_minigame"));
+    public static final RegistryKey<Registry<SoundEvent>> SOUND_EVENT_REGISTRY_KEY = RegistryKey.ofRegistry(Identifier.of(MODID, "sound_events"));
+    public static final TagKey<Item> STARTS_MINIGAME = TagKey.of(RegistryKeys.ITEM, Identifier.of(MODID, "starts_minigame"));
     public static final Registry<SoundEvent> SOUND_EVENTS = FabricRegistryBuilder.createSimple(SOUND_EVENT_REGISTRY_KEY).buildAndRegister();
     /*
         声音事件定义
@@ -36,7 +37,8 @@ public class StardewfishingFabric implements ModInitializer {
 
     @Override
     public void onInitialize() {
-        C2SCompleteMinigamePacket.register();
+        SFNetworking.registerPayloads();
+        SFNetworking.registerServerReceivers();
         CommonEvents.initialize();
         // 注册声音事件到注册表
         registerSoundEvent("cast", CAST);
@@ -52,12 +54,12 @@ public class StardewfishingFabric implements ModInitializer {
     }
     // 创建新的声音事件
     private static SoundEvent registerSound(String name) {
-        ResourceLocation id = new ResourceLocation(MODID, name);
-        return SoundEvent.createVariableRangeEvent(id);
+        Identifier id = Identifier.of(MODID, name);
+        return SoundEvent.of(id);
     }
 
     private static void registerSoundEvent(String name, SoundEvent soundEvent) {
         // 将声音事件注册到注册表
-        Registry.register(SOUND_EVENTS, new ResourceLocation(MODID, name), soundEvent);
+        Registry.register(SOUND_EVENTS, Identifier.of(MODID, name), soundEvent);
     }
 }

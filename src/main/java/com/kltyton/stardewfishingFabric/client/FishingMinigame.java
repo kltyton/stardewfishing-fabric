@@ -2,13 +2,13 @@ package com.kltyton.stardewfishingFabric.client;
 
 import com.kltyton.stardewfishingFabric.StardewfishingFabric;
 import com.kltyton.stardewfishingFabric.common.FishBehavior;
-import net.minecraft.util.Mth;
+import net.minecraft.util.math.MathHelper;
 
 import java.util.Random;
 
 public class FishingMinigame {
     // 完成小游戏所需的分数
-    public static final int POINTS_TO_FINISH = 120;
+    public static final int POINTS_TO_FINISH = 180;
 
     // 小游戏物理参数
     private static final float UP_ACCELERATION = 0.7F;
@@ -40,7 +40,9 @@ public class FishingMinigame {
     // 浮标是否在鱼上
     private boolean bobberOnFish = true;
     // 当前分数
-    private int points = POINTS_TO_FINISH / 5;
+    private int points = POINTS_TO_FINISH / 2;
+    // 未命中时的扣分节流
+    private int missDrainTicks = 0;
     // 成功刻数
     private int successTicks = 0;
     // 总刻数
@@ -96,7 +98,7 @@ public class FishingMinigame {
         } else {
             double distanceLeft = fishTarget - fishPos;
             double acceleration = (distanceLeft > 0 ? behavior.upAcceleration() : behavior.downAcceleration()) * Math.signum(distanceLeft);
-            fishVelocity = Mth.clamp(fishVelocity + acceleration, -behavior.topSpeed(), behavior.topSpeed());
+            fishVelocity = MathHelper.clamp(fishVelocity + acceleration, -behavior.topSpeed(), behavior.topSpeed());
         }
 
         fishPos += fishVelocity;
@@ -113,8 +115,8 @@ public class FishingMinigame {
         }
 
         // 游戏逻辑
-        int min = Mth.floor(bobberPos) - 2;
-        int max = Mth.ceil(bobberPos) + 24;
+        int min = MathHelper.floor(bobberPos) - 2;
+        int max = MathHelper.ceil(bobberPos) + 24;
         boolean wasOnFish = bobberOnFish;
         bobberOnFish = fishPos >= min && fishPos <= max;
 
@@ -131,11 +133,15 @@ public class FishingMinigame {
 
         if (bobberOnFish) {
             points += 1;
+            missDrainTicks = 0;
             if (points >= POINTS_TO_FINISH) {
                 screen.setResult(true, (double) successTicks / totalTicks);
             }
         } else {
-            points -= 1;
+            if (++missDrainTicks >= 2) {
+                missDrainTicks = 0;
+                points -= 1;
+            }
             if (points <= 0) {
                 screen.setResult(false, 0);
             }
