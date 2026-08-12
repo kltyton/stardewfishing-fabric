@@ -10,6 +10,7 @@ import net.minecraft.network.packet.s2c.play.BlockEntityUpdateS2CPacket;
 import net.minecraft.registry.RegistryWrapper;
 import net.minecraft.storage.ReadView;
 import net.minecraft.storage.WriteView;
+import net.minecraft.util.ItemScatterer;
 import net.minecraft.util.Clearable;
 import net.minecraft.util.math.BlockPos;
 
@@ -33,6 +34,18 @@ public class FishDisplayBlockEntity extends BlockEntity implements Clearable {
         }
     }
 
+    /**
+     * Vanilla calls this right before the block entity is removed, while the block is being replaced
+     * or removed. The displayed fish must be dropped here: by the time
+     * {@code Block.onStateReplaced} runs, the block entity is already gone from the chunk.
+     */
+    @Override
+    public void onBlockReplaced(BlockPos pos, BlockState state) {
+        if (getWorld() != null) {
+            ItemScatterer.spawn(getWorld(), pos.getX(), pos.getY(), pos.getZ(), item);
+        }
+    }
+
     @Override
     protected void readData(ReadView view) {
         super.readData(view);
@@ -42,7 +55,9 @@ public class FishDisplayBlockEntity extends BlockEntity implements Clearable {
     @Override
     protected void writeData(WriteView view) {
         super.writeData(view);
-        view.putNullable("displayed_item", ItemStack.CODEC, item);
+        if (!item.isEmpty()) {
+            view.putNullable("displayed_item", ItemStack.CODEC, item);
+        }
     }
 
     @Override

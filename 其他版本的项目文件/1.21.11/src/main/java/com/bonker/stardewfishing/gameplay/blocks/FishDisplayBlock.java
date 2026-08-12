@@ -26,7 +26,6 @@ import net.minecraft.state.property.BooleanProperty;
 import net.minecraft.state.property.Properties;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;
-import net.minecraft.util.ItemScatterer;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
@@ -115,15 +114,6 @@ public class FishDisplayBlock extends HorizontalFacingBlock implements BlockEnti
                 spawnPos.y += world.random.nextFloat();
                 world.addParticleClient(SFParticles.SPARKLE, spawnPos.x, spawnPos.y, spawnPos.z, 0, 0, 0);
             }
-        }
-    }
-
-    @Override
-    protected void onStateReplaced(BlockState state, net.minecraft.server.world.ServerWorld world,
-                                   BlockPos pos, boolean moved) {
-        BlockEntity blockEntity = world.getBlockEntity(pos);
-        if (blockEntity instanceof FishDisplayBlockEntity fishDisplay) {
-            ItemScatterer.spawn(world, pos.getX(), pos.getY(), pos.getZ(), fishDisplay.getItem());
         }
     }
 

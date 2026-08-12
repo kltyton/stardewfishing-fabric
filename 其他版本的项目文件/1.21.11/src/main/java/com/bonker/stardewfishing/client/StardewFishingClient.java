@@ -3,7 +3,9 @@ package com.bonker.stardewfishing.client;
 import com.bonker.stardewfishing.SFConfig;
 import com.bonker.stardewfishing.StardewFishing;
 import com.bonker.stardewfishing.gameplay.ItemUtils;
+import com.bonker.stardewfishing.gameplay.blocks.FishDisplayBlock;
 import com.bonker.stardewfishing.network.SFNetworking;
+import com.bonker.stardewfishing.registry.SFBlocks;
 import com.bonker.stardewfishing.registry.SFBlockEntities;
 import com.bonker.stardewfishing.registry.SFItems;
 import com.bonker.stardewfishing.registry.SFParticles;
@@ -82,6 +84,9 @@ public final class StardewFishingClient implements ClientModInitializer {
             tooltip.add(Math.min(1, tooltip.size()),
                     SFItems.LEGENDARY_FISH_TOOLTIP.copy().formatted(Formatting.BOLD));
             ItemUtils.addCatchTooltip(stack, tooltip);
+        }
+        if (stack.isOf(SFBlocks.FISH_DISPLAY.asItem())) {
+            tooltip.add(Math.min(1, tooltip.size()), FishDisplayBlock.TOOLTIP);
         }
 
         MinecraftClient client = MinecraftClient.getInstance();
