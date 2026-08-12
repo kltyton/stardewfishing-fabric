@@ -1,0 +1,12 @@
+accessWidener v2 named
+
+# FishingHookLogic reads the server-computed luck used by the hook.
+accessible field net/minecraft/world/entity/projectile/FishingHook luck I
+
+# RodTooltipHandler renders against the slot currently hovered by a container screen.
+accessible field net/minecraft/client/gui/screens/inventory/AbstractContainerScreen hoveredSlot Lnet/minecraft/world/inventory/Slot;
+accessible field net/minecraft/client/gui/screens/inventory/AbstractContainerScreen leftPos I
+accessible field net/minecraft/client/gui/screens/inventory/AbstractContainerScreen topPos I
+
+# FishingScreen preserves the original minigame timing while the world is paused.
+accessible field net/minecraft/client/DeltaTracker$Timer deltaTickResidual F
