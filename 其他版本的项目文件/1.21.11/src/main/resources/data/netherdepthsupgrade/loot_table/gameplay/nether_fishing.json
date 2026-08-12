@@ -1,0 +1,32 @@
+{
+  "fabric:load_conditions": [
+    {
+      "condition": "fabric:all_mods_loaded",
+      "values": [
+        "netherdepthsupgrade"
+      ]
+    }
+  ],
+  "type": "minecraft:fishing",
+  "pools": [
+    {
+      "bonus_rolls": 0.0,
+      "entries": [
+        {
+          "type": "minecraft:loot_table",
+          "value": "netherdepthsupgrade:gameplay/nether_fishing/junk",
+          "quality": -2,
+          "weight": 10
+        },
+        {
+          "type": "minecraft:loot_table",
+          "value": "netherdepthsupgrade:gameplay/nether_fishing/fish",
+          "quality": 0,
+          "weight": 90
+        }
+      ],
+      "rolls": 1.0
+    }
+  ],
+  "random_sequence": "minecraft:gameplay/fishing"
+}

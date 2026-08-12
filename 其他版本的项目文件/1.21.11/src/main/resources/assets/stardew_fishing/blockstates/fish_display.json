@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=east": {
+      "model": "stardew_fishing:block/fish_display",
+      "y": 90
+    },
+    "facing=north": {
+      "model": "stardew_fishing:block/fish_display"
+    },
+    "facing=south": {
+      "model": "stardew_fishing:block/fish_display",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "stardew_fishing:block/fish_display",
+      "y": 270
+    }
+  }
+}

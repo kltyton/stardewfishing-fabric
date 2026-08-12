@@ -1,0 +1,102 @@
+{
+  "modifiers": {
+    "stardew_fishing:trap_bobber": {
+      "line_strength": "x1.33"
+    },
+    "stardew_fishing:cork_bobber": {
+      "bar_size": "+10"
+    },
+    "stardew_fishing:treasure_bobber": {
+      "treasure_chance_bonus": "+0.05"
+    },
+    "stardew_fishing:quality_bobber": {
+      "exp_multiplier": "x1.4",
+      "quality_boost": "+1"
+    },
+    "tide:apple_fishing_bobber": {
+      "top_speed": "x0.9",
+      "up_acceleration": "x0.9",
+      "down_acceleration": "x1.1"
+    },
+    "tide:golden_apple_fishing_bobber": {
+      "top_speed": "x0.8",
+      "up_acceleration": "x0.8",
+      "down_acceleration": "x1.2",
+      "exp_multiplier": "x1.1"
+    },
+    "tide:enchanted_golden_apple_fishing_bobber": {
+      "top_speed": "x0.7",
+      "up_acceleration": "x0.7",
+      "down_acceleration": "x1.3",
+      "exp_multiplier": "x1.3"
+    },
+    "tide:iron_fishing_bobber": {
+      "exp_multiplier": "x1.05",
+      "idle_time": "+4"
+    },
+    "tide:golden_fishing_bobber": {
+      "exp_multiplier": "x1.15",
+      "idle_time": "+8"
+    },
+    "tide:diamond_fishing_bobber": {
+      "exp_multiplier": "x1.3",
+      "idle_time": "+12"
+    },
+    "tide:netherite_fishing_bobber": {
+      "exp_multiplier": "x1.5",
+      "idle_time": "+16"
+    },
+    "tide:amethyst_fishing_bobber": {
+      "top_speed": "x1.5",
+      "exp_multiplier": "x1.6"
+    },
+    "tide:echo_fishing_bobber": {
+      "top_speed": "x2",
+      "exp_multiplier": "x2.2"
+    },
+    "tide:chorus_fishing_bobber": {
+      "top_speed": "x1.5",
+      "up_acceleration": "x2",
+      "down_acceleration": "x2",
+      "exp_multiplier": "x1.6"
+    },
+    "tide:feather_fishing_bobber": {
+      "down_acceleration": "x0.2"
+    },
+    "tide:lichen_fishing_bobber": {
+      "down_acceleration":"x0.6",
+      "up_acceleration":"x0.6",
+      "exp_multiplier": "x0.7"
+    },
+    "tide:nautilus_fishing_bobber": {
+      "top_speed": "x0.7",
+      "down_acceleration":"x0.8",
+      "up_acceleration":"x0.8",
+      "exp_multiplier": "x0.7"
+    },
+    "tide:pearl_fishing_bobber": {
+      "idle_timee": "x0.5",
+      "move_variation": "x3",
+      "up_acceleration": "x1.5",
+      "down_acceleration": "x1.5",
+      "top_speed": "x1.3",
+      "exp_multiplier": "x1.8"
+    },
+    "tide:heart_fishing_bobber": {
+      "top_speed": "x0.7",
+      "down_acceleration":"x0.8",
+      "up_acceleration":"x0.8"
+    },
+    "tide:grassy_fishing_bobber": {
+      "quality_boost": "-1",
+      "exp_multiplier": "x0.75",
+      "bar_size": "+12"
+    },
+    "tide:iron_fishing_hook": {
+      "line_strength": "x1.2"
+    },
+    "tide:fortune_line": {
+      "golden_chance_bonus": "+0.1"
+    }
+  }
+}

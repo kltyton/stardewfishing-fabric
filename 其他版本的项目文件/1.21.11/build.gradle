@@ -1,0 +1,93 @@
+plugins {
+    id 'fabric-loom' version '1.17.19'
+    id 'maven-publish'
+}
+
+version = project.mod_version
+group = project.maven_group
+
+base {
+    archivesName = project.archives_base_name
+}
+
+repositories {
+    // No external mod repositories are needed: the port has no hard mod dependencies.
+}
+
+dependencies {
+    // To change the versions see the gradle.properties file
+    minecraft "com.mojang:minecraft:${project.minecraft_version}"
+    mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
+    modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
+    modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+}
+
+tasks.register('layoutRegressionTest', JavaExec) {
+    dependsOn compileTestJava
+    classpath = files(sourceSets.test.output.classesDirs, sourceSets.main.output.classesDirs)
+    mainClass = 'com.bonker.stardewfishing.client.ui.layout.ContainerOverlayLayoutTest'
+}
+
+tasks.named('test') {
+    failOnNoDiscoveredTests = false
+}
+
+tasks.named('check') {
+    dependsOn layoutRegressionTest
+}
+
+def resourceProperties = [
+        version          : version.toString(),
+        minecraft_version: minecraft_version.toString(),
+        loader_version   : loader_version.toString()
+]
+
+processResources {
+    exclude ".cache/**"
+    inputs.properties resourceProperties
+    filteringCharset = "UTF-8"
+
+    filesMatching("fabric.mod.json") {
+        expand resourceProperties
+    }
+}
+
+// The game ships Java 21 for 1.21.11; the development PATH may point at a newer JDK,
+// so pin the toolchain explicitly.
+def targetJavaVersion = 21
+tasks.withType(JavaCompile).configureEach {
+    it.options.encoding = "UTF-8"
+    if (targetJavaVersion >= 10 || JavaVersion.current().isJava10Compatible()) {
+        it.options.release.set(targetJavaVersion)
+    }
+}
+
+java {
+    def javaVersion = JavaVersion.toVersion(targetJavaVersion)
+    if (JavaVersion.current() < javaVersion) {
+        toolchain.languageVersion = JavaLanguageVersion.of(targetJavaVersion)
+    } else {
+        toolchain.languageVersion = JavaLanguageVersion.of(targetJavaVersion)
+    }
+    withSourcesJar()
+}
+
+def archiveBaseName = archives_base_name.toString()
+
+jar {
+    from("LICENSE") {
+        rename { "${it}_${archiveBaseName}" }
+    }
+}
+
+publishing {
+    publications {
+        create("mavenJava", MavenPublication) {
+            artifactId = project.archives_base_name
+            from components.java
+        }
+    }
+    repositories {
+        // No remote publication configured.
+    }
+}

@@ -1,0 +1,121 @@
+{
+  "type": "minecraft:generic",
+  "pools": [
+    {
+      "rolls": 1,
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:book",
+          "weight": 40,
+          "functions": [
+            {
+              "function": "minecraft:enchant_with_levels",
+              "levels": 30.0,
+              "treasure": true
+            }
+          ]
+        },
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:experience_bottle",
+          "weight": 20,
+          "functions": [
+            {
+              "function": "minecraft:set_count",
+              "count": {
+                "min": 12,
+                "max": 32
+              }
+            }
+          ]
+        },
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:music_disc_11",
+          "weight": 2
+        },
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:music_disc_13",
+          "weight": 2
+        },
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:music_disc_blocks",
+          "weight": 2
+        },
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:music_disc_cat",
+          "weight": 2
+        },
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:music_disc_chirp",
+          "weight": 2
+        },
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:music_disc_far",
+          "weight": 2
+        },
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:music_disc_mall",
+          "weight": 2
+        },
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:music_disc_mellohi",
+          "weight": 2
+        },
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:music_disc_otherside",
+          "weight": 2
+        },
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:music_disc_stal",
+          "weight": 2
+        },
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:music_disc_strad",
+          "weight": 2
+        },
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:music_disc_wait",
+          "weight": 2
+        },
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:music_disc_ward",
+          "weight": 2
+        },
+        {
+          "type": "stardew_fishing:optional",
+          "name": "supplementaries:antique_ink",
+          "weight": 10
+        },
+        {
+          "type": "stardew_fishing:optional",
+          "name": "supplementaries:bomb_blue",
+          "weight": 10
+        },
+        {
+          "type": "stardew_fishing:optional",
+          "name": "quark:diamond_heart",
+          "weight": 6
+        },
+        {
+          "type": "stardew_fishing:optional",
+          "name": "quark:smithing_template_rune",
+          "weight": 8
+        }
+      ]
+    }
+  ]
+}

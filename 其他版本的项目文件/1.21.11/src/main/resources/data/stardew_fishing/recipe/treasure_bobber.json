@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    " z ",
+    "xyx",
+    " a "
+  ],
+  "key": {
+    "x": "minecraft:gold_ingot",
+    "y": "minecraft:iron_ingot",
+    "z": "minecraft:redstone_block",
+    "a": "minecraft:tripwire_hook"
+  },
+  "result": {
+    "id": "stardew_fishing:treasure_bobber",
+    "count": 1
+  }
+}

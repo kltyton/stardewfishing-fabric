@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "xx",
+    "yy",
+    "xx"
+  ],
+  "key": {
+    "x": "#c:stripped_logs",
+    "y": "minecraft:barrel"
+  },
+  "result": {
+    "id": "stardew_fishing:cork_bobber",
+    "count": 1
+  }
+}

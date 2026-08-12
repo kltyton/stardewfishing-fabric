@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "xyx",
+    "yzy",
+    "yay"
+  ],
+  "key": {
+    "x": "minecraft:iron_nugget",
+    "y": "minecraft:iron_ingot",
+    "z": "minecraft:tripwire_hook",
+    "a": "minecraft:slime_ball"
+  },
+  "result": {
+    "id": "stardew_fishing:trap_bobber",
+    "count": 1
+  }
+}
