@@ -17,14 +17,14 @@
   "environment": "*",
   "entrypoints": {
     "client": [
-      "com.kltyton.stardewfishingFabric.client.ClientEvents"
+      "com.bonker.stardewfishing.client.StardewFishingClient"
     ],
     "main": [
-      "com.kltyton.stardewfishingFabric.StardewfishingFabric"
+      "com.bonker.stardewfishing.StardewFishing"
     ]
   },
   "mixins": [
-    "stardewfishing-fabric.mixins.json"
+    "stardew_fishing.mixins.json"
   ],
   "depends": {
     "java": ">=17",
@@ -34,15 +34,10 @@
     "minecraft": ">=1.20.1 <1.20.2"
   },
   "suggests": {
-    "aquaculture": "*",
     "tide": "*",
     "netherdepthsupgrade": "*",
-    "quality_food": "*",
-    "supplementaries": "*",
-    "quark": "*",
-    "crittersandcompanions": "*",
     "fishingreal": "*",
     "jobsaddon": "*"
   },
-  "accessWidener": "stardewfishing-fabric.accesswidener"
+  "accessWidener": "stardew_fishing.accesswidener"
 }

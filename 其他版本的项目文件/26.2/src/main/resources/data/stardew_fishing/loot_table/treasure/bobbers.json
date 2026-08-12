@@ -1,0 +1,115 @@
+{
+  "type": "minecraft:generic",
+  "pools": [
+    {
+      "rolls": 1,
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "stardew_fishing:trap_bobber",
+          "weight": 3
+        },
+        {
+          "type": "minecraft:item",
+          "name": "stardew_fishing:cork_bobber",
+          "weight": 3
+        },
+        {
+          "type": "minecraft:item",
+          "name": "stardew_fishing:sonar_bobber",
+          "weight": 3
+        },
+        {
+          "type": "minecraft:item",
+          "name": "stardew_fishing:treasure_bobber",
+          "weight": 2
+        },
+        {
+          "type": "minecraft:item",
+          "name": "stardew_fishing:quality_bobber",
+          "weight": 2
+        },
+        {
+          "type": "stardew_fishing:optional",
+          "name": "tide:apple_fishing_bobber",
+          "weight": 2
+        },
+        {
+          "type": "stardew_fishing:optional",
+          "name": "tide:golden_apple_fishing_bobber",
+          "weight": 2
+        },
+        {
+          "type": "stardew_fishing:optional",
+          "name": "tide:enchanted_golden_apple_fishing_bobber",
+          "weight": 1
+        },
+        {
+          "type": "stardew_fishing:optional",
+          "name": "tide:iron_fishing_bobber",
+          "weight": 2
+        },
+        {
+          "type": "stardew_fishing:optional",
+          "name": "tide:golden_fishing_bobber",
+          "weight": 2
+        },
+        {
+          "type": "stardew_fishing:optional",
+          "name": "tide:diamond_fishing_bobber",
+          "weight": 1
+        },
+        {
+          "type": "stardew_fishing:optional",
+          "name": "tide:netherite_fishing_bobber",
+          "weight": 1
+        },
+        {
+          "type": "stardew_fishing:optional",
+          "name": "tide:amethyst_fishing_bobber",
+          "weight": 2
+        },
+        {
+          "type": "stardew_fishing:optional",
+          "name": "tide:echo_fishing_bobber",
+          "weight": 1
+        },
+        {
+          "type": "stardew_fishing:optional",
+          "name": "tide:chorus_fishing_bobber",
+          "weight": 2
+        },
+        {
+          "type": "stardew_fishing:optional",
+          "name": "tide:feather_fishing_bobber",
+          "weight": 2
+        },
+        {
+          "type": "stardew_fishing:optional",
+          "name": "tide:lichen_fishing_bobber",
+          "weight": 2
+        },
+        {
+          "type": "stardew_fishing:optional",
+          "name": "tide:nautilus_fishing_bobber",
+          "weight": 2
+        },
+        {
+          "type": "stardew_fishing:optional",
+          "name": "tide:pearl_fishing_bobber",
+          "weight": 1
+        },
+        {
+          "type": "stardew_fishing:optional",
+          "name": "tide:heart_fishing_bobber",
+          "weight": 2
+        },
+        {
+          "type": "stardew_fishing:optional",
+          "name": "tide:grassy_fishing_bobber",
+          "weight": 2
+        }
+      ]
+    }
+  ]
+}

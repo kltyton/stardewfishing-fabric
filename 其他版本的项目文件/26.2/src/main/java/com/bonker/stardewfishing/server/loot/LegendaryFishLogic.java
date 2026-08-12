@@ -1,0 +1,123 @@
+package com.bonker.stardewfishing.server.loot;
+
+import com.bonker.stardewfishing.common.config.SFConfig;
+import com.bonker.stardewfishing.StardewFishing;
+import com.bonker.stardewfishing.registry.SFItems;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Holder;
+import net.minecraft.resources.Identifier;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.tags.ItemTags;
+import net.minecraft.tags.TagKey;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.biome.Biome;
+import net.minecraft.world.level.storage.loot.BuiltInLootTables;
+import net.minecraft.world.level.storage.loot.LootParams;
+import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
+import org.jetbrains.annotations.Nullable;
+import org.joml.Vector2i;
+
+import java.util.List;
+
+/**
+ * Fabric-side replacement for the NeoForge {@code IGlobalLootModifier} pipeline. Hooks actual
+ * vanilla fishing loot inside {@code FishingHook.retrieve} before any reward is locked or spawned,
+ * preserving the probability, luck, biome tag, and legendary fish choice behavior.
+ */
+public final class LegendaryFishLogic {
+    private static final List<Identifier> FISHING_LOOT_TABLES = List.of(
+            BuiltInLootTables.FISHING.identifier()
+    );
+
+    private static final List<Vector2i> BIOME_CHECK_OFFSETS = List.of(
+            new Vector2i(16, 0), new Vector2i(-16, 0), new Vector2i(0, 16), new Vector2i(0, -16),
+            new Vector2i(16, 16), new Vector2i(16, -16), new Vector2i(-16, -16), new Vector2i(-16, 16),
+            new Vector2i(32, 0), new Vector2i(-32, 0), new Vector2i(0, 32), new Vector2i(0, -32),
+            new Vector2i(32, 32), new Vector2i(32, -32), new Vector2i(-32, -32), new Vector2i(-32, 32));
+
+    private LegendaryFishLogic() {
+    }
+
+    public static void apply(List<ItemStack> generatedLoot, LootParams params, ServerLevel level) {
+        if (generatedLoot.isEmpty()) {
+            return;
+        }
+
+        if (level.getRandom().nextFloat() >= SFConfig.getLegendaryFishChance(params.getLuck())) {
+            return;
+        }
+
+        int index = 0;
+        for (ItemStack stack : generatedLoot) {
+            if (stack.is(ItemTags.FISHES)) {
+                break;
+            }
+            index++;
+        }
+
+        if (index == generatedLoot.size()) {
+            return;
+        }
+
+        if (params.contextMap().getOptional(LootContextParams.ORIGIN) == null) {
+            return;
+        }
+        BlockPos pos = BlockPos.containing(params.contextMap().getOptional(LootContextParams.ORIGIN));
+
+        LegendaryCategory category = findLegendaryCategory(level, pos);
+        if (category != null) {
+            generatedLoot.set(index, new ItemStack(category.chooseFish(level)));
+        }
+    }
+
+    @Nullable
+    private static LegendaryCategory findLegendaryCategory(Level level, BlockPos pos) {
+        LegendaryCategory direct = null;
+
+        Holder<Biome> biome = level.getBiome(pos);
+        if (LegendaryCategory.JUNGLE.matches(biome)) return LegendaryCategory.JUNGLE;
+        else if (LegendaryCategory.ARID.matches(biome)) return LegendaryCategory.ARID;
+        else if (LegendaryCategory.WARM_OCEAN.matches(biome)) direct = LegendaryCategory.WARM_OCEAN;
+        else if (LegendaryCategory.NORMAL_OCEAN.matches(biome)) direct = LegendaryCategory.NORMAL_OCEAN;
+        else if (LegendaryCategory.RIVER.matches(biome)) direct = LegendaryCategory.RIVER;
+
+        for (Vector2i offset : BIOME_CHECK_OFFSETS) {
+            biome = level.getBiome(pos.offset(offset.x, 0, offset.y));
+            if (LegendaryCategory.JUNGLE.matches(biome)) return LegendaryCategory.JUNGLE;
+            if (LegendaryCategory.ARID.matches(biome)) return LegendaryCategory.ARID;
+        }
+
+        return direct;
+    }
+
+    public enum LegendaryCategory {
+        JUNGLE(StardewFishing.HAS_JUNGLE_FISH),
+        ARID(StardewFishing.HAS_ARID_FISH),
+        NORMAL_OCEAN(StardewFishing.HAS_NORMAL_OCEAN_FISH),
+        WARM_OCEAN(StardewFishing.HAS_WARM_OCEAN_FISH),
+        RIVER(StardewFishing.HAS_RIVER_FISH);
+
+        private final TagKey<Biome> tag;
+
+        LegendaryCategory(TagKey<Biome> tag) {
+            this.tag = tag;
+        }
+
+        public boolean matches(Holder<Biome> biome) {
+            return biome.is(tag);
+        }
+
+        public Item chooseFish(Level level) {
+            boolean rand = level.getRandom().nextBoolean();
+            return switch (this) {
+                case NORMAL_OCEAN -> rand ? SFItems.STORM_TARPON : SFItems.GOLIATH_GROUPER;
+                case WARM_OCEAN -> rand ? SFItems.BLAZING_OARFISH : SFItems.CYCLOPS_MAHIMAHI;
+                case RIVER -> rand ? SFItems.DEMON_GAR : SFItems.CRYSTALLINE_SNAKEHEAD;
+                case JUNGLE -> rand ? SFItems.CHROMATIC_ARAPAIMA : SFItems.VAMPIRE_PAYARA;
+                case ARID -> rand ? SFItems.SABRETOOTHED_TIGERFISH : SFItems.GOLDEN_SNOOK;
+            };
+        }
+    }
+}

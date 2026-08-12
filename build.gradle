@@ -52,6 +52,20 @@ dependencies {
     modCompileOnly "curse.maven:jobsaddon-682362:5043002"
 }
 
+tasks.register('layoutRegressionTest', JavaExec) {
+    dependsOn compileTestJava
+    classpath = files(sourceSets.test.output.classesDirs, sourceSets.main.output.classesDirs)
+    mainClass = 'com.bonker.stardewfishing.client.ui.layout.ContainerOverlayLayoutTest'
+}
+
+tasks.named('test') {
+    failOnNoDiscoveredTests = false
+}
+
+tasks.named('check') {
+    dependsOn layoutRegressionTest
+}
+
 def resourceProperties = [
         version          : project.version.toString(),
         minecraft_version: providers.gradleProperty("minecraft_version").get(),
@@ -88,7 +102,7 @@ java {
     withSourcesJar()
 }
 loom {
-    accessWidenerPath = file("src/main/resources/stardewfishing-fabric.accesswidener")
+    accessWidenerPath = file("src/main/resources/stardew_fishing.accesswidener")
 }
 
 jar {
