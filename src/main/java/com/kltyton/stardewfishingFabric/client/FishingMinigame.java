@@ -1,60 +1,79 @@
 package com.kltyton.stardewfishingFabric.client;
 
-import com.kltyton.stardewfishingFabric.StardewfishingFabric;
-import com.kltyton.stardewfishingFabric.common.FishBehavior;
+import com.kltyton.stardewfishingFabric.registry.SFItems;
+import com.kltyton.stardewfishingFabric.registry.SFSoundEvents;
+import com.kltyton.stardewfishingFabric.common.networking.S2CStartMinigamePacket;
+import com.kltyton.stardewfishingFabric.common.item.FishingItemSupport;
 import net.minecraft.util.Mth;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 
 import java.util.Random;
 
 public class FishingMinigame {
-    // 完成小游戏所需的分数
-    public static final int POINTS_TO_FINISH = 120;
+    private static final int POINTS_TO_FINISH = 120;
+    private static final int TREASURE_CHEST_TIME = 30;
 
-    // 小游戏物理参数
     private static final float UP_ACCELERATION = 0.7F;
     private static final float GRAVITY = -0.7F;
-    private static final int MAX_BOBBER_HEIGHT = 106;
-    private static final int MAX_FISH_HEIGHT = FishBehavior.MAX_HEIGHT;
+    private static final int MAX_FISH_HEIGHT = 127;
 
-    // 随机数生成器，用于小游戏逻辑
     private final Random random = new Random();
-    // 钓鱼屏幕对象
     private final FishingScreen screen;
-    // 鱼类行为对象
-    private final FishBehavior behavior;
+    private final S2CStartMinigamePacket packet;
+    private final float lineStrength;
+    private final int barSize;
+    private final int maxBobberHeight;
 
-    // 浮标位置和速度
+    private boolean hasSonarBobber = false;
+    private boolean hasTreasureBobber = false;
+
     private double bobberPos = 0;
     private double bobberVelocity = 0;
 
-    // 鱼的位置和速度
     private double fishPos = 0;
     private double fishVelocity = 0;
-    // 鱼的目标位置
     private int fishTarget = -1;
-    // 鱼是否空闲
     private boolean fishIsIdle = false;
-    // 鱼空闲的刻数
     private int fishIdleTicks = 0;
 
-    // 浮标是否在鱼上
     private boolean bobberOnFish = true;
-    // 当前分数
-    private int points = POINTS_TO_FINISH / 5;
-    // 成功刻数
+    private boolean bobberOnChest = false;
+    private float points = POINTS_TO_FINISH / 5F;
     private int successTicks = 0;
-    // 总刻数
     private int totalTicks = 0;
 
-    // 构造函数，初始化小游戏
-    public FishingMinigame(FishingScreen screen, FishBehavior behavior) {
+    private final boolean goldenChest;
+    private final int chestPos;
+    private int chestAppearTime;
+    private float chestTimer = 0;
+    private boolean chestVisible = false;
+
+    public FishingMinigame(FishingScreen screen, S2CStartMinigamePacket packet, Player player, float lineStrength, int barSize) {
         this.screen = screen;
-        this.behavior = behavior;
+        this.packet = packet;
+        this.goldenChest = packet.goldenChest();
+        this.chestPos = packet.treasureChest() ? (int) (5 + 125 * random.nextFloat()) : 0;
+        this.chestAppearTime = packet.treasureChest() ? (int) (20 + 40 * random.nextFloat()) : -1;
+        this.lineStrength = lineStrength;
+        this.barSize = barSize;
+        this.maxBobberHeight = 142 - barSize;
+
+        InteractionHand hand = FishingItemSupport.getRodHand(player);
+        if (hand != null) {
+            ItemStack bobber = FishingItemSupport.getBobber(player.getItemInHand(hand));
+
+            if (bobber.is(SFItems.SONAR_BOBBER)) {
+                hasSonarBobber = true;
+            } else if (bobber.is(SFItems.TREASURE_BOBBER)) {
+                hasTreasureBobber = true;
+            }
+        }
     }
 
-    // 每帧更新小游戏状态
     public void tick(boolean mouseDown) {
-        // 浮标运动逻辑
+        // bobber movement
         if (mouseDown) {
             if (bobberVelocity < 0) {
                 bobberVelocity *= 0.9;
@@ -65,9 +84,9 @@ public class FishingMinigame {
         }
 
         bobberPos += bobberVelocity;
-        if (bobberPos > MAX_BOBBER_HEIGHT) {
+        if (bobberPos > maxBobberHeight) {
             bobberVelocity = 0;
-            bobberPos = MAX_BOBBER_HEIGHT;
+            bobberPos = maxBobberHeight;
         } else if (bobberPos <= 0) {
             bobberPos = 0;
             if (bobberVelocity < 2 * GRAVITY) {
@@ -77,9 +96,9 @@ public class FishingMinigame {
             }
         }
 
-        // 鱼运动逻辑
-        if (fishTarget == -1 || behavior.shouldMoveNow(fishIdleTicks, random)) {
-            fishTarget = behavior.pickNextTargetPos((int) fishPos, random);
+        // fish movement
+        if (fishTarget == -1 || shouldMoveNow(fishIdleTicks, random)) {
+            fishTarget = pickNextTargetPos((int) fishPos, random);
             fishIsIdle = false;
             fishIdleTicks = 0;
         }
@@ -88,15 +107,15 @@ public class FishingMinigame {
             fishIdleTicks++;
             if (Math.abs(fishVelocity) > 0) {
                 boolean up = fishVelocity > 0;
-                fishVelocity -= (up ? behavior.upAcceleration() : behavior.downAcceleration()) * Math.signum(fishVelocity);
+                fishVelocity -= (up ? packet.upAcceleration() : packet.downAcceleration()) * Math.signum(fishVelocity);
                 if (fishVelocity == 0 || up && fishVelocity < 0 || !up && fishVelocity > 0) {
                     fishVelocity = 0;
                 }
             }
         } else {
             double distanceLeft = fishTarget - fishPos;
-            double acceleration = (distanceLeft > 0 ? behavior.upAcceleration() : behavior.downAcceleration()) * Math.signum(distanceLeft);
-            fishVelocity = Mth.clamp(fishVelocity + acceleration, -behavior.topSpeed(), behavior.topSpeed());
+            double acceleration = (distanceLeft > 0 ? packet.upAcceleration() : packet.downAcceleration()) * Math.signum(distanceLeft);
+            fishVelocity = Mth.clamp(fishVelocity + acceleration, -packet.topSpeed(), packet.topSpeed());
         }
 
         fishPos += fishVelocity;
@@ -112,53 +131,137 @@ public class FishingMinigame {
             fishIsIdle = true;
         }
 
-        // 游戏逻辑
+        // treasure chest timer
+        if (chestAppearTime > 0 && --chestAppearTime == 0) {
+            chestVisible = true;
+        }
+
+        // game logic
         int min = Mth.floor(bobberPos) - 2;
-        int max = Mth.ceil(bobberPos) + 24;
+        int max = Mth.ceil(bobberPos) + barSize - 12;
         boolean wasOnFish = bobberOnFish;
+        boolean wasOnChest = bobberOnChest;
         bobberOnFish = fishPos >= min && fishPos <= max;
+        bobberOnChest = chestVisible && chestPos >= min && chestPos <= max;
 
         totalTicks++;
-        if (bobberOnFish) {
+        if (bobberOnFish || (hasTreasureBobber && bobberOnChest)) {
             successTicks++;
         }
 
         if (wasOnFish != bobberOnFish) {
             screen.stopReelingSounds();
-            screen.playSound(StardewfishingFabric.DWOP);
-            screen.reelSoundTimer = 1;
+            screen.playSound(SFSoundEvents.getDwop(bobberOnFish));
+        }
+
+        if (wasOnChest != bobberOnChest) {
+            screen.playSound(SFSoundEvents.getDwop(bobberOnChest));
+        }
+
+        if (!bobberOnChest && chestTimer > 0 && chestTimer < TREASURE_CHEST_TIME) {
+            chestTimer -= 0.25F;
+        }
+
+        if (bobberOnChest && chestTimer < TREASURE_CHEST_TIME && ++chestTimer >= TREASURE_CHEST_TIME) {
+            chestVisible = false;
         }
 
         if (bobberOnFish) {
             points += 1;
             if (points >= POINTS_TO_FINISH) {
-                screen.setResult(true, (double) successTicks / totalTicks);
+                screen.setResult(true, (double) successTicks / totalTicks, gotChest(), isGoldenChest());
             }
-        } else {
-            points -= 1;
+        } else if (!hasTreasureBobber || !bobberOnChest) {
+            // Line strength of 1.0  -> -1.0  per tick
+            // Line strength of 1.33 -> -0.67 per tick
+            points = Math.max(0, points - 2 + lineStrength);
             if (points <= 0) {
-                screen.setResult(false, 0);
+                screen.setResult(false, 0, false, false);
             }
         }
     }
 
-    // 获取浮标位置
+    private boolean shouldMoveNow(int idleTicks, Random random) {
+        if (packet.idleTime() == 0) return true;
+        if (packet.idleTime() == 1) return idleTicks == 1;
+
+        int variation = idleTicks / 2;
+        float chancePerTick = 1F / variation;
+
+        if (idleTicks >= packet.idleTime() - variation) {
+            return random.nextFloat() <= chancePerTick;
+        }
+
+        return false;
+    }
+
+    private int pickNextTargetPos(int oldPos, Random random) {
+        int shortestDistance = Math.max(10, packet.avgDistance() - packet.moveVariation());
+        int longestDistance = Math.min(MAX_FISH_HEIGHT, packet.avgDistance() + packet.moveVariation());
+
+        int downLowerLimit = oldPos - shortestDistance;
+        int upLowerLimit = oldPos + shortestDistance;
+
+        boolean canGoDown = downLowerLimit >= 0;
+        boolean canGoUp = upLowerLimit <= MAX_FISH_HEIGHT;
+
+        boolean goingUp;
+        if (canGoUp && canGoDown) {
+            goingUp = random.nextBoolean();
+        } else {
+            goingUp = canGoUp;
+        }
+
+        int distance = random.nextInt(shortestDistance, longestDistance + 1);
+
+        return Mth.clamp(oldPos + distance * (goingUp ? 1 : -1), 0, MAX_FISH_HEIGHT);
+    }
+
     public float getBobberPos() {
         return (float) bobberPos;
     }
 
-    // 获取鱼的位置
     public float getFishPos() {
         return (float) fishPos;
     }
 
-    // 检查浮标是否在鱼上
     public boolean isBobberOnFish() {
         return bobberOnFish;
     }
 
-    // 获取进度
+    public boolean isBobberOnChest() {
+        return bobberOnChest;
+    }
+
     public float getProgress() {
-        return (float) points / POINTS_TO_FINISH;
+        return points / POINTS_TO_FINISH;
+    }
+
+    public int getChestPos() {
+        return chestPos;
+    }
+
+    public boolean isChestVisible() {
+        return chestVisible;
+    }
+
+    public boolean isGoldenChest() {
+        return goldenChest;
+    }
+
+    public float getChestProgress() {
+        return chestTimer / TREASURE_CHEST_TIME;
+    }
+
+    public boolean gotChest() {
+        return chestTimer >= TREASURE_CHEST_TIME;
+    }
+
+    public boolean hasSonarBobber() {
+        return hasSonarBobber;
+    }
+
+    public int getBarSize() {
+        return barSize;
     }
 }

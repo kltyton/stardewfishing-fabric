@@ -1,0 +1,5 @@
+classTweaker v2 official
+
+# Fishing hook luck is part of the minigame's treasure probability calculation.
+# Fabric has no public getter for this vanilla constructor value.
+accessible field net/minecraft/world/entity/projectile/FishingHook luck I

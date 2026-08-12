@@ -1,0 +1,112 @@
+package com.bonker.stardewfishing.server.command;
+
+import com.bonker.stardewfishing.StardewFishing;
+import com.bonker.stardewfishing.gameplay.minigame.FishingHookLogic;
+import com.bonker.stardewfishing.common.item.FishingItemSupport;
+import com.bonker.stardewfishing.server.persistence.MinigameDisabledPlayers;
+import com.bonker.stardewfishing.server.resource.FishBehaviorReloadListener;
+import com.bonker.stardewfishing.server.fishing.FishingHookAttachment;
+import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.StringReader;
+import com.mojang.brigadier.context.CommandContext;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import com.mojang.brigadier.exceptions.DynamicCommandExceptionType;
+import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
+import com.mojang.brigadier.suggestion.Suggestions;
+import com.mojang.brigadier.suggestion.SuggestionsBuilder;
+import net.minecraft.commands.CommandBuildContext;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.commands.Commands;
+import net.minecraft.commands.SharedSuggestionProvider;
+import net.minecraft.commands.arguments.item.ItemArgument;
+import net.minecraft.commands.arguments.item.ItemInput;
+import net.minecraft.commands.synchronization.ArgumentTypeInfo;
+import net.minecraft.commands.synchronization.SingletonArgumentInfo;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.fabricmc.fabric.api.command.v2.ArgumentTypeRegistry;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.projectile.FishingHook;
+import net.minecraft.world.item.ItemStack;
+import org.jspecify.annotations.NullMarked;
+
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+
+@NullMarked
+public class SFCommands {
+    private static final DynamicCommandExceptionType NO_BEHAVIOR = new DynamicCommandExceptionType(obj -> Component.translatable("commands.stardew_fishing.no_behavior", obj));
+    private static final SimpleCommandExceptionType NO_ROD = new SimpleCommandExceptionType(Component.translatable("commands.stardew_fishing.no_rod"));
+
+    public static void registerArgumentType() {
+        ArgumentTypeRegistry.registerArgumentType(
+                StardewFishing.identifier("fish_behavior"),
+                FishBehaviorArgument.class,
+                SingletonArgumentInfo.contextAware(FishBehaviorArgument::new)
+        );
+    }
+
+    public static void register(CommandDispatcher<CommandSourceStack> dispatcher, CommandBuildContext buildContext) {
+        dispatcher.register(Commands.literal("stardew_fishing")
+                .then(Commands.literal("start_minigame")
+                        .requires(stack -> Commands.LEVEL_GAMEMASTERS.check(stack.permissions()))
+                        .then(Commands.argument("item", new FishBehaviorArgument(buildContext))
+                                        .executes(SFCommands::startMinigame)))
+                .then(Commands.literal("toggle_minigame")
+                        .executes(SFCommands::toggleMinigame)));
+    }
+
+    private static int startMinigame(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        ServerPlayer player = context.getSource().getPlayerOrException();
+
+        InteractionHand rodHand = FishingItemSupport.getRodHand(player);
+        if (rodHand == null) {
+            throw NO_ROD.create();
+        }
+
+        ItemStack stack = context.getArgument("item", ItemInput.class).createItemStack(1);
+
+        FishingHook hook = FishingItemSupport.spawnHook(player, player.getItemInHand(rodHand), player.position().add(0, 1, 0));
+        player.fishing = hook;
+
+        List<ItemStack> rewards = FishingHookAttachment.get(hook).getRewards();
+        rewards.clear();
+        rewards.add(stack);
+
+        FishingHookLogic.startStardewMinigame(context.getSource().getPlayerOrException());
+        return 0;
+    }
+
+    private static int toggleMinigame(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        CommandSourceStack source = context.getSource();
+        ServerPlayer player = source.getPlayerOrException();
+
+        MinigameDisabledPlayers data = MinigameDisabledPlayers.get(source.getServer());
+        boolean disabled = data.isMinigameDisabled(player);
+        data.setMinigameDisabled(player, !disabled);
+
+        source.sendSuccess(() -> Component.translatable("commands.stardew_fishing." + (disabled ? "enabled" : "disabled") + "_minigame"), true);
+        return 0;
+    }
+
+    public static class FishBehaviorArgument extends ItemArgument {
+        public FishBehaviorArgument(CommandBuildContext context) {
+            super(context);
+        }
+
+        @Override
+        public ItemInput parse(StringReader pReader) throws CommandSyntaxException {
+            ItemInput item = super.parse(pReader);
+            if (!FishBehaviorReloadListener.getKeys().contains(BuiltInRegistries.ITEM.getKey(item.item().value()))) {
+                throw NO_BEHAVIOR.createWithContext(pReader, item.item().value());
+            }
+            return item;
+        }
+
+        @Override
+        public <S> CompletableFuture<Suggestions> listSuggestions(CommandContext<S> pContext, SuggestionsBuilder pBuilder) {
+            return SharedSuggestionProvider.suggestResource(FishBehaviorReloadListener.getKeys(), pBuilder);
+        }
+    }
+}

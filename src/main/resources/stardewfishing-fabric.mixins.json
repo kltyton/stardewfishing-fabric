@@ -4,11 +4,15 @@
   "package": "com.kltyton.stardewfishingFabric.mixin",
   "compatibilityLevel": "JAVA_17",
   "mixins": [
-    "FishingHookMixin"
+    "FishingHookMixin",
+    "FishingHookAccessor",
+    "ArmorDyeRecipeMixin",
+    "FishingRodItemMixin",
+    "ItemStackMixin"
   ],
   "client": [
-    "FishingRodItemMixin",
-    "FishingHookMixin"
+    "client.SoundEngineMixin",
+    "client.AbstractContainerScreenAccessor"
   ],
   "injectors": {
     "defaultRequire": 1

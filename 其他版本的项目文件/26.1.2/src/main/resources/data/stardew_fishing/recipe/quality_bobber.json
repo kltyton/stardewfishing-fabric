@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    " x ",
+    " yx",
+    "z  "
+  ],
+  "key": {
+    "x": "minecraft:diamond",
+    "y": "minecraft:prismarine_crystals",
+    "z": "minecraft:prismarine_shard"
+  },
+  "result": {
+    "id": "stardew_fishing:quality_bobber",
+    "count": 1
+  }
+}

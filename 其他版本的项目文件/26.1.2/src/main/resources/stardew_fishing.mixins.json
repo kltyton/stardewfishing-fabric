@@ -1,0 +1,17 @@
+{
+  "required": true,
+  "package": "com.bonker.stardewfishing.mixin",
+  "compatibilityLevel": "JAVA_25",
+  "mixins": [
+    "FishingHookAccessor",
+    "FishingHookMixin",
+    "ItemStackMixin"
+  ],
+  "client": [
+    "client.AbstractContainerScreenAccessor",
+    "client.SoundEngineMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

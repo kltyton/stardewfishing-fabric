@@ -14,6 +14,31 @@
       "stardew_fishing:dwop"
     ]
   },
+  "dwop_reverse": {
+    "sounds": [
+      "stardew_fishing:dwop_reverse"
+    ]
+  },
+  "dwop_loud": {
+    "sounds": [
+      "stardew_fishing:dwop_loud"
+    ]
+  },
+  "dwop_reverse_loud": {
+    "sounds": [
+      "stardew_fishing:dwop_reverse_loud"
+    ]
+  },
+  "equip": {
+    "sounds": [
+      "stardew_fishing:equip"
+    ]
+  },
+  "unequip": {
+    "sounds": [
+      "stardew_fishing:unequip"
+    ]
+  },
   "fish_bite": {
     "sounds": [
       "stardew_fishing:fish_bite"
@@ -49,6 +74,21 @@
   "reel_slow": {
     "sounds": [
       "stardew_fishing:reel_slow"
+    ]
+  },
+  "open_chest": {
+    "sounds": [
+      "stardew_fishing:open_chest"
+    ]
+  },
+  "open_chest_golden": {
+    "sounds": [
+      "stardew_fishing:open_chest_golden"
+    ]
+  },
+  "chest_get": {
+    "sounds": [
+      "stardew_fishing:chest_get"
     ]
   }
 }

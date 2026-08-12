@@ -1,0 +1,84 @@
+{
+  "cast": {
+    "sounds": [
+        "stardew_fishing:cast"
+    ]
+  },
+  "complete": {
+    "sounds": [
+      "stardew_fishing:complete"
+    ]
+  },
+  "dwop": {
+    "sounds": [
+      "stardew_fishing:dwop"
+    ]
+  },
+  "dwop_reverse": {
+    "sounds": [
+      "stardew_fishing:dwop_reverse"
+    ]
+  },
+  "equip": {
+    "sounds": [
+      "stardew_fishing:equip"
+    ]
+  },
+  "unequip": {
+    "sounds": [
+      "stardew_fishing:unequip"
+    ]
+  },
+  "fish_bite": {
+    "sounds": [
+      "stardew_fishing:fish_bite"
+    ]
+  },
+  "fish_escape": {
+    "sounds": [
+      "stardew_fishing:fish_escape"
+    ]
+  },
+  "fish_hit": {
+    "sounds": [
+        "stardew_fishing:fish_hit"
+    ]
+  },
+  "pull_item": {
+    "sounds": [
+      "stardew_fishing:pull_item"
+    ]
+  },
+  "reel_creak": {
+    "sounds": [
+      "stardew_fishing:reel_creak1",
+      "stardew_fishing:reel_creak2",
+      "stardew_fishing:reel_creak3"
+    ]
+  },
+  "reel_fast": {
+    "sounds": [
+      "stardew_fishing:reel_fast"
+    ]
+  },
+  "reel_slow": {
+    "sounds": [
+      "stardew_fishing:reel_slow"
+    ]
+  },
+  "open_chest": {
+    "sounds": [
+      "stardew_fishing:open_chest"
+    ]
+  },
+  "open_chest_golden": {
+    "sounds": [
+      "stardew_fishing:open_chest_golden"
+    ]
+  },
+  "chest_get": {
+    "sounds": [
+      "stardew_fishing:chest_get"
+    ]
+  }
+}

@@ -1,0 +1,88 @@
+plugins {
+    id 'net.fabricmc.fabric-loom' version "${loom_version}"
+    id 'maven-publish'
+}
+
+version = project.mod_version
+group = project.mod_group
+
+base {
+    archivesName = project.archives_base_name
+}
+
+loom {
+    accessWidenerPath = file('src/main/resources/stardew_fishing.classtweaker')
+}
+
+repositories {
+    maven {
+        name = 'Fuzs Mod Resources'
+        url = 'https://raw.githubusercontent.com/Fuzss/modresources/main/maven/'
+    }
+}
+
+dependencies {
+    minecraft "com.mojang:minecraft:${project.minecraft_version}"
+    implementation "net.fabricmc:fabric-loader:${project.loader_version}"
+    implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+
+    include(api("fuzs.forgeconfigapiport:forgeconfigapiport-fabric:${project.forge_config_api_port_version}"))
+
+}
+
+tasks.register('layoutRegressionTest', JavaExec) {
+    dependsOn compileTestJava
+    classpath = files(sourceSets.test.output.classesDirs, sourceSets.main.output.classesDirs)
+    mainClass = 'com.bonker.stardewfishing.client.ui.layout.ContainerOverlayLayoutTest'
+}
+
+tasks.named('test') {
+    failOnNoDiscoveredTests = false
+}
+
+tasks.named('check') {
+    dependsOn layoutRegressionTest
+}
+
+def resourceProperties = [
+        version          : version.toString(),
+        minecraft_version: minecraft_version.toString(),
+        loader_version   : loader_version.toString()
+]
+
+processResources {
+    inputs.properties resourceProperties
+    filteringCharset = 'UTF-8'
+
+    filesMatching('fabric.mod.json') {
+        expand resourceProperties
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    options.release = 25
+    options.compilerArgs.addAll(['-Xlint:deprecation'])
+}
+
+java {
+    toolchain.languageVersion = JavaLanguageVersion.of(25)
+    withSourcesJar()
+}
+
+def archiveBaseName = archives_base_name.toString()
+
+jar {
+    from('LICENSE') {
+        rename { "${it}_${archiveBaseName}" }
+    }
+}
+
+publishing {
+    publications {
+        create('mavenJava', MavenPublication) {
+            artifactId = project.archives_base_name
+            from components.java
+        }
+    }
+}

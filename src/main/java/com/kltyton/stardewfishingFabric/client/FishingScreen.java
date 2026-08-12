@@ -1,29 +1,36 @@
 package com.kltyton.stardewfishingFabric.client;
 
+import com.kltyton.stardewfishingFabric.common.config.SFConfig;
 import com.kltyton.stardewfishingFabric.StardewfishingFabric;
-import com.kltyton.stardewfishingFabric.client.util.Animation;
-import com.kltyton.stardewfishingFabric.client.util.RenderUtil;
-import com.kltyton.stardewfishingFabric.client.util.Shake;
-import com.kltyton.stardewfishingFabric.common.FishBehavior;
+import com.kltyton.stardewfishingFabric.client.animation.Animation;
+import com.kltyton.stardewfishingFabric.client.animation.Shake;
+import com.kltyton.stardewfishingFabric.client.render.RenderUtil;
+import com.kltyton.stardewfishingFabric.registry.SFSoundEvents;
 import com.kltyton.stardewfishingFabric.common.networking.C2SCompleteMinigamePacket;
+import com.kltyton.stardewfishingFabric.common.networking.S2CStartMinigamePacket;
 import com.kltyton.stardewfishingFabric.common.networking.SFNetworking;
+import com.kltyton.stardewfishingFabric.common.item.FishingItemSupport;
+import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.blaze3d.vertex.PoseStack;
-import io.netty.buffer.Unpooled;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
-import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
-import org.lwjgl.glfw.GLFW;
+import net.minecraft.world.item.ItemStack;
+
+import java.util.Objects;
 
 public class FishingScreen extends Screen {
-    private static final Component TITLE = Component.literal("钓鱼小游戏");
-    private static final ResourceLocation TEXTURE = new ResourceLocation(StardewfishingFabric.MODID, "textures/minigame.png");
+    private static final Component TITLE = Component.literal("Fishing Minigame");
+    private static final ResourceLocation CHEST_TEXTURE = StardewfishingFabric.id("textures/gui/chest.png");
+    private static final ResourceLocation GOLDEN_CHEST_TEXTURE = StardewfishingFabric.id("textures/gui/golden_chest.png");
 
-    // GUI尺寸常量
     private static final int GUI_WIDTH = 38;
     private static final int GUI_HEIGHT = 152;
     private static final int HIT_WIDTH = 73;
@@ -31,61 +38,58 @@ public class FishingScreen extends Screen {
     private static final int PERFECT_WIDTH = 41;
     private static final int PERFECT_HEIGHT = 12;
 
-    // 透明度变化速率
     private static final float ALPHA_PER_TICK = 1F / 10;
-    // 手柄旋转速度
     private static final float HANDLE_ROT_FAST = Mth.PI / 3;
     private static final float HANDLE_ROT_SLOW = Mth.PI / -7F;
 
-    // 卷线声音计时器长度
     private static final int REEL_FAST_LENGTH = 30;
     private static final int REEL_SLOW_LENGTH = 20;
     private static final int CREAK_LENGTH = 6;
 
-    // GUI位置变量
-    private int leftPos, topPos;
-    // 小游戏逻辑
     private final FishingMinigame minigame;
-    // 小游戏状态
-    public Status status = Status.HIT_TEXT;
-    // 钓鱼准确度
-    public double accuracy = -1;
-    // 鼠标按下状态
-    private boolean mouseDown = false;
-    // 动画计时器
-    private int animationTimer = 0;
+    private final ItemStack fish;
 
-    // 动画对象
+    private int leftPos, topPos;
+    private Status status = Status.HIT_TEXT;
+    private double accuracy = -1;
+    private boolean inputDown = false;
+    private int animationTimer = 0;
+    private boolean gotChest = false;
+    private boolean goldenChest = false;
+
     private final Animation textSize = new Animation(0);
     private final Animation progressBar;
     private final Animation bobberPos = new Animation(0);
     private final Animation bobberAlpha = new Animation(1);
     private final Animation fishPos = new Animation(0);
     private final Animation handleRot = new Animation(0);
+    private final Animation chestProgress = new Animation(0);
+    private final Animation chestAppear = new Animation(0);
 
-    // 屏幕震动效果
     private final Shake shake = new Shake(0.75F, 1);
+    private final Shake chestShake = new Shake(0.75F, 1);
 
-    // 卷线声音计时器
     public int reelSoundTimer = -1;
-    // 吱嘎声计时器
     private int creakSoundTimer = 0;
 
-    // 构造函数，初始化小游戏
-    public FishingScreen(FishBehavior behavior) {
+    private float partialTick = 0;
+
+    public FishingScreen(S2CStartMinigamePacket packet) {
         super(TITLE);
-        this.minigame = new FishingMinigame(this, behavior);
+        this.minigame = new FishingMinigame(this, packet, Objects.requireNonNull(Minecraft.getInstance().player), packet.lineStrength(), packet.barSize());
+        this.fish = packet.fish();
         this.progressBar = new Animation(minigame.getProgress());
     }
 
-    // 渲染方法
     @Override
     public void render(GuiGraphics pGuiGraphics, int pMouseX, int pMouseY, float pPartialTick) {
-        final float partialTick = minecraft.getFrameTime();
+        if (minecraft == null) return;
+        partialTick = minecraft.getFrameTime();
 
         PoseStack poseStack = pGuiGraphics.pose();
+        ResourceLocation texture = DimensionTextureManager.getOrCreate().getMinigameTexture(minecraft.level);
 
-        if (!isPauseScreen()) {
+        if (status == Status.HIT_TEXT) {
             // render HIT!
             float scale = textSize.getInterpolated(partialTick) * 1.5F;
             float x = (width - HIT_WIDTH * scale) / 2;
@@ -93,39 +97,96 @@ public class FishingScreen extends Screen {
 
             poseStack.pushPose();
             poseStack.scale(scale, scale, 1);
-            RenderUtil.blitF(pGuiGraphics, TEXTURE, x * (1 / scale), y * (1 / scale), 71, 0, HIT_WIDTH, HIT_HEIGHT);
+            RenderUtil.blitF(pGuiGraphics, texture, x * (1 / scale), y * (1 / scale), 71, 0, HIT_WIDTH, HIT_HEIGHT);
             poseStack.popPose();
+        } else if (status == Status.CHEST_OPENING) {
+            // darken screen
+            renderBackground(pGuiGraphics);
+
+            int frame = Math.min(30 - animationTimer, 19) / 2;
+            pGuiGraphics.blit(goldenChest ? GOLDEN_CHEST_TEXTURE : CHEST_TEXTURE, leftPos + 38 / 2 - 64, topPos, 0, frame * 128, 128, 128, 128, 1280);
         } else {
-            // 变暗 screen
-            renderBackground(pGuiGraphics, 0,0,0);
+            // darken screen
+            renderBackground(pGuiGraphics);
 
             RenderUtil.drawWithShake(poseStack, shake, partialTick, status == Status.SUCCESS || status == Status.FAILURE, () -> {
                 RenderUtil.drawWithBlend(() -> {
-                    // draw 钓鱼 GUI
-                    pGuiGraphics.blit(TEXTURE, leftPos, topPos, 0, 0, GUI_WIDTH, GUI_HEIGHT);
+                    // draw fishing gui
+                    pGuiGraphics.blit(texture, leftPos, topPos, 0, 0, GUI_WIDTH, GUI_HEIGHT);
 
-                    // draw 浮标
+                    // draw bobber
                     RenderUtil.drawWithAlpha(bobberAlpha.getInterpolated(partialTick), () -> {
-                        float bobberY = 4 - 36 + (142 - bobberPos.getInterpolated(partialTick));
-                        RenderUtil.blitF(pGuiGraphics, TEXTURE, leftPos + 18, topPos + bobberY, 38, 0, 9, 36);
+                        int size = minigame.getBarSize();
+                        float bobberY = 4 - size + (142 - bobberPos.getInterpolated(partialTick));
+                        // clamp decimal part to multiples of 0.1 to prevent floating point visual artifacts
+                        bobberY = (int) (bobberY * 10) / 10F;
+
+                        RenderUtil.blitF(pGuiGraphics, texture, leftPos + 18, topPos + bobberY, 38, 0, 9, 2);
+                        RenderUtil.blitRepeatingF(pGuiGraphics, texture, leftPos + 18, topPos + bobberY + 2, 38, 2, 9, size - 4, 9, 1);
+                        RenderUtil.blitF(pGuiGraphics, texture, leftPos + 18, topPos + bobberY + size - 2, 38, 3, 9, 2);
                     });
                 });
 
+                // draw sonar bobber
+                if (minigame.hasSonarBobber()) {
+                    pGuiGraphics.blit(texture, leftPos + 38, topPos + 2, 185, 0, 26, 25);
+
+                    pGuiGraphics.renderItem(fish, leftPos + 45, topPos + 8);
+                    if (pMouseX >= leftPos + 38 && pMouseY >= topPos + 5 && pMouseX <= leftPos + 64 && pMouseY <= topPos + 27) {
+                        pGuiGraphics.renderTooltip(font, AbstractContainerScreen.getTooltipFromItem(minecraft, fish).subList(0, 1), fish.getTooltipImage(), pMouseX, pMouseY);
+                    }
+                }
+
                 RenderUtil.drawWithShake(poseStack, shake, partialTick, minigame.isBobberOnFish() && status == Status.MINIGAME, () -> {
-                    // draw 鱼
-                    float fishY = 4 - 16 + (142 - fishPos.getInterpolated(partialTick));
-                    RenderUtil.blitF(pGuiGraphics, TEXTURE, leftPos + 14, topPos + fishY, 55, 0, 16, 15);
+                    float pos = fishPos.getInterpolated(partialTick);
+                    int offset = 0;
+                    if (FishingItemSupport.isLegendaryFish(fish)) {
+                        offset += 15;
+                        if (SFConfig.isLegendaryFlashingEnabled() && (int) (pos / 8) % 2 == 1) {
+                            offset += 15;
+                        }
+                    }
+                    // draw fish
+                    float fishY = 4 - 16 + (142 - pos);
+                    RenderUtil.blitF(pGuiGraphics, texture, leftPos + 14, topPos + fishY, 55, offset, 16, 15);
                 });
 
-                // draw 进度条
+                if (minigame.isChestVisible() || animationTimer < 0) {
+                    float scale = chestAppear.getInterpolated(partialTick);
+                    if (scale != 0) {
+                        poseStack.pushPose();
+                        poseStack.scale(scale, scale, 1);
+
+                        float chestX = (leftPos + 24 - 8 * scale) / scale;
+                        float chestY = (topPos + 4 - 13 + (142 + 8 - 8 * scale - minigame.getChestPos())) / scale;
+
+                        RenderUtil.drawWithShake(poseStack, chestShake, partialTick, minigame.isBobberOnChest() && status == Status.MINIGAME, () -> {
+                            // draw treasure chest
+                            RenderUtil.blitF(pGuiGraphics, texture, chestX, chestY, 211, minigame.isGoldenChest() ? 13 : 0, 13, 13);
+                        });
+
+                        // bar bg
+                        RenderUtil.fillF(pGuiGraphics, chestX + 1, chestY + 12, chestX + 12, chestY + 14, 0, 0x55000000);
+
+                        // bar color
+                        float progress = chestProgress.getInterpolated(partialTick);
+                        int color = Mth.hsvToRgb(progress / 3.0F, 1.0F, 1.0F) | 0xFF000000;
+                        RenderUtil.fillF(pGuiGraphics, chestX + 1, chestY + 12, chestX + 1 + progress * 11, chestY + 14, 200, color);
+
+                        poseStack.popPose();
+                    }
+                }
+
+                // draw progress bar
                 float progress = progressBar.getInterpolated(partialTick);
                 int color = Mth.hsvToRgb(progress / 3.0F, 1.0F, 1.0F) | 0xFF000000;
                 RenderUtil.fillF(pGuiGraphics, leftPos + 33, topPos + 148, leftPos + 37, topPos + 148 - progress * 145, 0, color);
 
-                // draw 处理
-                RenderUtil.drawRotatedAround(poseStack, handleRot.getInterpolated(partialTick), leftPos + 6.5F, topPos + 130.5F, () -> pGuiGraphics.blit(TEXTURE, leftPos + 5, topPos + 129, 47, 0, 8, 3));
+                // draw handle
+                RenderUtil.drawRotatedAround(poseStack, handleRot.getInterpolated(partialTick), leftPos + 6.5F, topPos + 130.5F, () ->
+                        pGuiGraphics.blit(texture, leftPos + 5, topPos + 129, 47, 0, 8, 3));
 
-                // render 完美!
+                // render PERFECT!
                 if (status == Status.SUCCESS && accuracy == 1) {
                     float scale = textSize.getInterpolated(partialTick);
                     float x = leftPos + 2 + (PERFECT_WIDTH - PERFECT_WIDTH * scale) / 2;
@@ -133,28 +194,43 @@ public class FishingScreen extends Screen {
 
                     poseStack.pushPose();
                     poseStack.scale(scale, scale, 1);
-                    RenderUtil.blitF(pGuiGraphics, TEXTURE, x * (1 / scale), y * (1 / scale), 144, 0, PERFECT_WIDTH, PERFECT_HEIGHT);
+                    RenderUtil.blitF(pGuiGraphics, texture, x / scale, y / scale, 144, 0, PERFECT_WIDTH, PERFECT_HEIGHT);
                     poseStack.popPose();
                 }
             });
         }
+
+        if (status != Status.HIT_TEXT) {
+            pGuiGraphics.drawString(font, StardewfishingFabric.MOD_NAME, 2, height - 2 - font.lineHeight, 0x6969697F);
+        }
     }
-    // 初始化方法
+
     @Override
     protected void init() {
         leftPos = (width - GUI_WIDTH) / 2;
         topPos = (height - GUI_HEIGHT) / 2;
+
+        if (minecraft != null && SFConfig.isolateAudioCues()) {
+            for (SoundSource category : SoundSource.values()) {
+                if (category == SoundSource.MASTER) continue;
+                minecraft.getSoundManager().stop(null, category);
+            }
+        }
     }
-    //每帧更新
+
     @Override
     public void tick() {
         shake.tick();
+        if (minigame.isChestVisible()) {
+            chestShake.tick();
+        }
 
         switch (status) {
             case HIT_TEXT -> {
                 if (animationTimer < 20) {
                     if (++animationTimer == 20) {
                         status = Status.MINIGAME;
+                        animationTimer = Integer.MAX_VALUE;
                     } else if (animationTimer <= 5) {
                         textSize.addValue(0.2F);
                     } else if (animationTimer <= 15) {
@@ -165,32 +241,80 @@ public class FishingScreen extends Screen {
                 }
             }
             case MINIGAME -> {
-                minigame.tick(mouseDown);
+                minigame.tick(inputDown);
 
                 boolean onFish = minigame.isBobberOnFish();
 
                 progressBar.setValue(minigame.getProgress());
                 bobberPos.setValue(minigame.getBobberPos());
-                bobberAlpha.addValue(onFish ? ALPHA_PER_TICK : -ALPHA_PER_TICK, 0.4F, 1);
+                bobberAlpha.addValue((onFish || minigame.isBobberOnChest()) ? ALPHA_PER_TICK : -ALPHA_PER_TICK, 0.4F, 1);
                 fishPos.setValue(minigame.getFishPos());
                 handleRot.addValue(onFish ? HANDLE_ROT_FAST : HANDLE_ROT_SLOW);
 
+                if (status != Status.MINIGAME) {
+                    break;
+                }
+
+                if (minigame.isChestVisible()) {
+                    if (animationTimer == Integer.MAX_VALUE) {
+                        animationTimer = 5;
+                    }
+
+                    if (animationTimer > 0) {
+                        animationTimer--;
+                        chestAppear.addValue(0.2F);
+
+                        if (animationTimer == 0) {
+                            animationTimer = Integer.MIN_VALUE;
+                            chestAppear.setValue(1);
+                        }
+                    }
+
+                    chestProgress.setValue(minigame.getChestProgress());
+                } else {
+                    if (animationTimer == Integer.MIN_VALUE) {
+                        animationTimer = -5;
+
+                        playSound(SFSoundEvents.CHEST_GET);
+                    }
+
+                    if (animationTimer < 0) {
+                        animationTimer++;
+                        chestAppear.addValue(-0.2F);
+
+                        if (animationTimer == 0) {
+                            chestAppear.setValue(0);
+                        }
+                    }
+                }
+
                 if (reelSoundTimer == -1 || --reelSoundTimer == 0) {
                     reelSoundTimer = onFish ? REEL_FAST_LENGTH : REEL_SLOW_LENGTH;
-                    playSound(onFish ? StardewfishingFabric.REEL_FAST : StardewfishingFabric.REEL_SLOW);
+                    if (!SFConfig.isolateAudioCues()) {
+                        playSound(onFish ? SFSoundEvents.REEL_FAST : SFSoundEvents.REEL_SLOW);
+                    }
                 }
 
                 if (creakSoundTimer > 0) {
                     creakSoundTimer--;
                 }
-                if (mouseDown && creakSoundTimer == 0) {
+                if (inputDown && creakSoundTimer == 0) {
                     creakSoundTimer = CREAK_LENGTH;
-                    playSound(StardewfishingFabric.REEL_CREAK);
+                    if (!SFConfig.isolateAudioCues()) {
+                        playSound(SFSoundEvents.REEL_CREAK);
+                    }
                 }
             }
             case SUCCESS, FAILURE -> {
                 if (--animationTimer == 0) {
-                    onClose();
+                    if (gotChest) {
+                        status = Status.CHEST_OPENING;
+                        animationTimer = 30;
+
+                        playSound(goldenChest ? SFSoundEvents.OPEN_CHEST_GOLDEN : SFSoundEvents.OPEN_CHEST);
+                    } else {
+                        onClose();
+                    }
                 } else if (animationTimer >= 15) {
                     textSize.addValue(0.2F);
                 } else if (animationTimer >= 5) {
@@ -199,86 +323,120 @@ public class FishingScreen extends Screen {
                     textSize.addValue(-0.16F);
                 }
             }
+            case CHEST_OPENING -> {
+                if (--animationTimer == 0) {
+                    onClose();
+                }
+            }
         }
     }
-    // 鼠标点击事件
+
     @Override
     public boolean mouseClicked(double pMouseX, double pMouseY, int pButton) {
-        if (pButton == GLFW.GLFW_MOUSE_BUTTON_1 || pButton == GLFW.GLFW_MOUSE_BUTTON_2) {
-            if (!mouseDown) {
-                playSound(StardewfishingFabric.REEL_CREAK);
-                mouseDown = true;
+        if (StardewFishingClient.MINIGAME_BUTTON.matchesMouse(pButton)) {
+            if (status == Status.MINIGAME) {
+                setInputDown(true);
+                return true;
             }
-            return true;
-        } else {
-            return super.mouseClicked(pMouseX, pMouseY, pButton);
         }
+
+        return super.mouseClicked(pMouseX, pMouseY, pButton);
     }
-    // 鼠标释放事件
+
     @Override
     public boolean mouseReleased(double pMouseX, double pMouseY, int pButton) {
-        if (pButton == GLFW.GLFW_MOUSE_BUTTON_1 || pButton == GLFW.GLFW_MOUSE_BUTTON_2) {
-            if (mouseDown) {
-                mouseDown = false;
-            }
-            return true;
-        } else {
-            return super.mouseReleased(pMouseX, pMouseY, pButton);
+        if (StardewFishingClient.MINIGAME_BUTTON.matchesMouse(pButton)) {
+            setInputDown(false);
         }
+
+        return super.mouseReleased(pMouseX, pMouseY, pButton);
     }
-    // 关闭屏幕时发送完成包
+
+    @Override
+    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        if (StardewFishingClient.MINIGAME_BUTTON.matches(keyCode, scanCode)) {
+            if (status == Status.MINIGAME) {
+                setInputDown(true);
+                return true;
+            }
+        }
+
+        return super.keyPressed(keyCode, scanCode, modifiers);
+    }
+
+    @Override
+    public boolean keyReleased(int keyCode, int scanCode, int modifiers) {
+        if (StardewFishingClient.MINIGAME_BUTTON.matches(keyCode, scanCode)) {
+            setInputDown(false);
+        }
+
+        return super.keyReleased(keyCode, scanCode, modifiers);
+    }
+
+    public void setInputDown(boolean down) {
+        if (down && !inputDown && !SFConfig.isolateAudioCues()) {
+            playSound(SFSoundEvents.REEL_CREAK);
+        }
+
+        inputDown = down;
+    }
+
     @Override
     public void onClose() {
         super.onClose();
-
-        // 创建数据包缓冲区
-        FriendlyByteBuf buf = new FriendlyByteBuf(Unpooled.buffer());
-        // 创建数据包对象
-        C2SCompleteMinigamePacket packet = new C2SCompleteMinigamePacket(status == Status.SUCCESS, accuracy);
-        // 编码数据包
-        packet.encode(buf);
-        // 发送数据包到服务器
-        SFNetworking.sendToServer(buf);
+        SFNetworking.sendToServer(new C2SCompleteMinigamePacket(status == Status.SUCCESS || status == Status.CHEST_OPENING, accuracy, gotChest));
 
         stopReelingSounds();
     }
-    // 是否在按下Esc时关闭屏幕
+
     @Override
     public boolean shouldCloseOnEsc() {
         return status == Status.MINIGAME;
     }
-    // 是否是暂停屏幕
+
     @Override
     public boolean isPauseScreen() {
-        return status != Status.HIT_TEXT;
+        return status != Status.HIT_TEXT && SFConfig.pauseDuringMinigame();
     }
-    // 设置结果和状态
-    public void setResult(boolean success, double accuracy) {
+
+    public void setResult(boolean success, double accuracy, boolean gotChest, boolean goldenChest) {
         status = success ? Status.SUCCESS : Status.FAILURE;
         this.accuracy = accuracy;
+        this.gotChest = gotChest;
+        this.goldenChest = goldenChest;
+
         animationTimer = 20;
         textSize.reset(0.0F);
 
-        progressBar.freeze();
-        bobberPos.freeze();
-        bobberAlpha.freeze();
-        fishPos.freeze();
-        handleRot.freeze();
+        progressBar.freeze(partialTick);
+        bobberPos.freeze(partialTick);
+        bobberAlpha.freeze(partialTick);
+        fishPos.freeze(partialTick);
+        handleRot.freeze(partialTick);
+        chestProgress.freeze(partialTick);
+        chestAppear.freeze(partialTick);
 
-        playSound(success ? StardewfishingFabric.COMPLETE : StardewfishingFabric.FISH_ESCAPE);
+        playSound(success ? SFSoundEvents.COMPLETE : SFSoundEvents.FISH_ESCAPE);
+        stopReelingSounds();
+        reelSoundTimer = -2;
         shake.setValues(2.0F, 1);
     }
-    // 播放声音
+
     public void playSound(SoundEvent soundEvent) {
+        if (minecraft == null) return;
         minecraft.getSoundManager().play(SimpleSoundInstance.forUI(soundEvent, 1.0F));
     }
-    // 停止卷线声音
+
     public void stopReelingSounds() {
-        minecraft.getSoundManager().stop(StardewfishingFabric.REEL_FAST.getLocation(), null);
-        minecraft.getSoundManager().stop(StardewfishingFabric.REEL_SLOW.getLocation(), null);
+        reelSoundTimer = 1;
+
+        if (minecraft == null) return;
+
+        minecraft.getSoundManager().stop(SFSoundEvents.REEL_FAST.getLocation(), null);
+        minecraft.getSoundManager().stop(SFSoundEvents.REEL_SLOW.getLocation(), null);
     }
-    // 小游戏状态枚举
+
     public enum Status {
-        HIT_TEXT, MINIGAME, SUCCESS, FAILURE
+        HIT_TEXT, MINIGAME, SUCCESS, FAILURE, CHEST_OPENING
     }
 }

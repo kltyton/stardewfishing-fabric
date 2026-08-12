@@ -7,6 +7,9 @@ import com.kltyton.stardewfishingFabric.common.FishBehavior;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.JsonOps;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import net.fabricmc.fabric.api.resource.IdentifiableResourceReloadListener;
+import net.fabricmc.loader.api.FabricLoader;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
@@ -15,86 +18,101 @@ import net.minecraft.util.GsonHelper;
 import net.minecraft.util.profiling.ProfilerFiller;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.core.registries.BuiltInRegistries;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.jetbrains.annotations.NotNull;
+import net.minecraft.world.item.Items;
 import org.jetbrains.annotations.Nullable;
-import net.fabricmc.fabric.api.resource.IdentifiableResourceReloadListener;
-import java.io.*;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-
-public class FishBehaviorReloadListener extends SimplePreparableReloadListener<Map<String, JsonObject>> implements IdentifiableResourceReloadListener {
-
-    private static final Logger LOGGER = LogManager.getLogger();
-    private static final Gson GSON_INSTANCE = new Gson();
-    private static final ResourceLocation LOCATION = new ResourceLocation(StardewfishingFabric.MODID, "data.json");
-    private static FishBehaviorReloadListener INSTANCE;
-
-    // 存储物品与其对应鱼类行为的映射
-    private final Map<Item, FishBehavior> fishBehaviors = new HashMap<>();
+public final class FishBehaviorReloadListener extends SimplePreparableReloadListener<Map<String, JsonObject>>
+        implements IdentifiableResourceReloadListener {
+    private static final Gson GSON = new Gson();
+    private static final ResourceLocation LOCATION = StardewfishingFabric.id("fish_behaviors.json");
+    private static FishBehaviorReloadListener instance;
+    private final Map<Item, FishBehavior> behaviors = new HashMap<>();
+    private final List<ResourceLocation> keys = new ArrayList<>();
     private FishBehavior defaultBehavior;
+
     private FishBehaviorReloadListener() {
-        super();
     }
 
     @Override
     public ResourceLocation getFabricId() {
-        return new ResourceLocation(StardewfishingFabric.MODID, "fish_behavior_reload");
+        return StardewfishingFabric.id("fish_behaviors");
     }
 
     @Override
-    protected @NotNull Map<String, JsonObject> prepare(ResourceManager pResourceManager, ProfilerFiller pProfiler) {
+    protected Map<String, JsonObject> prepare(ResourceManager manager, ProfilerFiller profiler) {
         Map<String, JsonObject> objects = new HashMap<>();
-        for (Resource resource : pResourceManager.getResourceStack(LOCATION)) {
-            try (InputStream inputstream = resource.open();
-                 Reader reader = new BufferedReader(new InputStreamReader(inputstream, StandardCharsets.UTF_8))
-            ) {
-                objects.put(resource.sourcePackId(), GsonHelper.fromJson(GSON_INSTANCE, reader, JsonObject.class));
+        for (Resource resource : manager.getResourceStack(LOCATION)) {
+            try (Reader reader = new BufferedReader(new InputStreamReader(resource.open(), StandardCharsets.UTF_8))) {
+                objects.put(resource.sourcePackId(), GsonHelper.fromJson(GSON, reader, JsonObject.class));
             } catch (RuntimeException | IOException exception) {
-                LOGGER.error("数据包 {} 中鱼行为列表 {} 中的 json 无效", LOCATION, resource.sourcePackId(), exception);
+                StardewfishingFabric.LOGGER.error("Invalid fish behavior list {} in data pack {}", LOCATION,
+                        resource.sourcePackId(), exception);
             }
         }
         return objects;
     }
 
-
     @Override
-    protected void apply(Map<String, JsonObject> jsonObjects, ResourceManager pResourceManager, ProfilerFiller pProfiler) {
-        for (Map.Entry<String, JsonObject> entry : jsonObjects.entrySet()) {
-            // 解析鱼类行为列表
+    protected void apply(Map<String, JsonObject> objects, ResourceManager manager, ProfilerFiller profiler) {
+        behaviors.clear();
+        keys.clear();
+        defaultBehavior = null;
+        for (Map.Entry<String, JsonObject> entry : objects.entrySet()) {
             FishBehaviorList.CODEC.parse(JsonOps.INSTANCE, entry.getValue())
-                    .resultOrPartial(errorMsg -> LOGGER.warn("无法解码数据包 {} - {} 中的鱼行为列表 {}", LOCATION, entry.getKey(), errorMsg))
-                    .ifPresent(behaviorList -> behaviorList.behaviors.forEach((loc, fishBehavior) -> {
-                        Item item = BuiltInRegistries.ITEM.get(loc);
-                        if (behaviorList.replace || !fishBehaviors.containsKey(item)) {
-                            fishBehaviors.put(item, fishBehavior);
-                        }
-
-                        behaviorList.defaultBehavior.ifPresent(behavior -> defaultBehavior = behavior);
-                    }));
+                    .resultOrPartial(error -> StardewfishingFabric.LOGGER.warn(
+                            "Failed to decode fish behaviors {} in data pack {}: {}", LOCATION, entry.getKey(), error))
+                    .ifPresent(list -> {
+                        list.behaviors.forEach((id, behavior) -> {
+                            Item item = BuiltInRegistries.ITEM.get(id);
+                            if (item == Items.AIR) {
+                                if (FabricLoader.getInstance().isModLoaded(id.getNamespace())) {
+                                    StardewfishingFabric.LOGGER.warn("Mod '{}' is loaded but behavior item '{}' is missing",
+                                            id.getNamespace(), id);
+                                }
+                            } else if (list.replace || !behaviors.containsKey(item)) {
+                                behaviors.put(item, behavior);
+                                keys.add(id);
+                            }
+                        });
+                        if (list.replace || defaultBehavior == null) list.defaultBehavior.ifPresent(value -> defaultBehavior = value);
+                    });
         }
+        Collections.sort(keys);
     }
 
     public static FishBehaviorReloadListener create() {
-        INSTANCE = new FishBehaviorReloadListener();
-        return INSTANCE;
+        instance = new FishBehaviorReloadListener();
+        return instance;
     }
 
-    public static FishBehavior getBehavior(@Nullable ItemStack stack) {
-        if (stack == null) return INSTANCE.defaultBehavior;
-        return INSTANCE.fishBehaviors.getOrDefault(stack.getItem(), INSTANCE.defaultBehavior);
+    public static @Nullable FishBehavior getBehavior(@Nullable ItemStack stack) {
+        if (instance == null) return null;
+        return stack == null ? instance.defaultBehavior
+                : instance.behaviors.getOrDefault(stack.getItem(), instance.defaultBehavior);
     }
 
-    private record FishBehaviorList(boolean replace, Map<ResourceLocation, FishBehavior> behaviors, Optional<FishBehavior> defaultBehavior) {
-        private static final Codec<FishBehaviorList> CODEC = RecordCodecBuilder.create(inst -> inst.group(
+    public static List<ResourceLocation> getKeys() {
+        return instance == null ? List.of() : List.copyOf(instance.keys);
+    }
+
+    private record FishBehaviorList(boolean replace, Map<ResourceLocation, FishBehavior> behaviors,
+                                    Optional<FishBehavior> defaultBehavior) {
+        private static final Codec<FishBehaviorList> CODEC = RecordCodecBuilder.create(instance -> instance.group(
                 Codec.BOOL.optionalFieldOf("replace", false).forGetter(FishBehaviorList::replace),
                 Codec.unboundedMap(ResourceLocation.CODEC, FishBehavior.CODEC).fieldOf("behaviors").forGetter(FishBehaviorList::behaviors),
                 FishBehavior.CODEC.optionalFieldOf("defaultBehavior").forGetter(FishBehaviorList::defaultBehavior)
-        ).apply(inst, FishBehaviorList::new));
+        ).apply(instance, FishBehaviorList::new));
     }
 }

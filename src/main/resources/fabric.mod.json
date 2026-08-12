@@ -2,9 +2,10 @@
   "schemaVersion": 1,
   "id": "stardew_fishing",
   "version": "${version}",
-  "name": "stardewfishing-fabric",
-  "description": "Making fishing fun with a minigame directly inspired by Stardew Valley(fabric version of Stardew Fishing)!",
+  "name": "Stardew Fishing (Fabric)",
+  "description": "A complete Fabric port of Stardew Fishing 3.7 for Minecraft 1.20.1.",
   "authors": [
+    "bonker",
     "kltyton"
   ],
   "contact": {
@@ -26,9 +27,22 @@
     "stardewfishing-fabric.mixins.json"
   ],
   "depends": {
+    "java": ">=17",
     "fabricloader": ">=${loader_version}",
-    "fabric": "*",
-    "minecraft": ">=${minecraft_version}"
+    "fabric-api": ">=${fabric_version}",
+    "forgeconfigapiport": ">=8.0.2",
+    "minecraft": ">=1.20.1 <1.20.2"
   },
-  "accessWidener" : "stardewfishing-fabric.accesswidener"
+  "suggests": {
+    "aquaculture": "*",
+    "tide": "*",
+    "netherdepthsupgrade": "*",
+    "quality_food": "*",
+    "supplementaries": "*",
+    "quark": "*",
+    "crittersandcompanions": "*",
+    "fishingreal": "*",
+    "jobsaddon": "*"
+  },
+  "accessWidener": "stardewfishing-fabric.accesswidener"
 }
