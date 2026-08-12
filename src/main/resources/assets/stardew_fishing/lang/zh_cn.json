@@ -40,7 +40,8 @@
   "item.stardew_fishing.crystalline_snakehead.tooltip": "分布于河流",
   "item.stardew_fishing.demon_gar.tooltip": "分布于河流",
   "tooltip.stardew_fishing.bobber": "浮标：%s",
-  "tooltip.stardew_fishing.no_bobber": "无浮标（右键点击装备）",  "tooltip.stardew_fishing.no_bobber_attach_disabled": "无浮标",
+  "tooltip.stardew_fishing.no_bobber": "无浮标（右键点击装备）",
+  "tooltip.stardew_fishing.no_bobber_attach_disabled": "无浮标",
   "tooltip.stardew_fishing.rod_modifier": "能力调整：",
   "tooltip.stardew_fishing.rod_modifier_shift": "能力调整：按住SHIFT",
   "tooltip.stardew_fishing.modifier.idle_time": "鱼静止时间：%s",
@@ -53,6 +54,7 @@
   "tooltip.stardew_fishing.modifier.line_strength": "钓线强度：%s",
   "tooltip.stardew_fishing.modifier.bar_size": "钓鱼条大小：%s",
   "tooltip.stardew_fishing.modifier.treasure_chance_bonus": "宝藏几率：%s",
+  "tooltip.stardew_fishing.modifier.golden_chance_bonus": "金色宝箱几率：%s",
   "tooltip.stardew_fishing.modifier.exp_multiplier": "获得经验：%s",
   "tooltip.stardew_fishing.modifier.quality_boost": "鱼类品质：%s",
   "tooltip.stardew_fishing.modifier.pixels": "像素",
@@ -72,6 +74,8 @@
   "attribute.name.stardew_fishing.exp_multiplier": "钓鱼经验值",
   "commands.stardew_fishing.no_behavior": "%s没有关联的鱼类行为",
   "commands.stardew_fishing.no_rod": "你必须手持钓竿才能开始钓鱼",
+  "commands.stardew_fishing.disabled_minigame": "已禁用 Stardew Fishing 钓鱼小游戏",
+  "commands.stardew_fishing.enabled_minigame": "已启用 Stardew Fishing 钓鱼小游戏",
   "profile.item.stardew_fishing.goliath_grouper": "描述即将更新...",
   "profile.item.stardew_fishing.vampire_payara": "描述即将更新...",
   "profile.item.stardew_fishing.golden_snook": "描述即将更新...",
@@ -81,5 +85,7 @@
   "profile.item.stardew_fishing.storm_tarpon": "描述即将更新...",
   "profile.item.stardew_fishing.blazing_oarfish": "描述即将更新...",
   "profile.item.stardew_fishing.crystalline_snakehead": "描述即将更新...",
-  "profile.item.stardew_fishing.demon_gar": "描述即将更新..."
+  "profile.item.stardew_fishing.demon_gar": "描述即将更新...",
+  "key.categories.stardew_fishing": "星露谷钓鱼",
+  "key.stardew_fishing.minigame_button": "钓鱼小游戏操作"
 }

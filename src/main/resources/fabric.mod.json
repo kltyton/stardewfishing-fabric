@@ -2,18 +2,14 @@
   "schemaVersion": 1,
   "id": "stardew_fishing",
   "version": "${version}",
-  "name": "Stardew Fishing (Fabric)",
-  "description": "A complete Fabric port of Stardew Fishing 3.7 for Minecraft 1.20.1.",
+  "name": "Stardew Fishing",
+  "description": "Brings Stardew Valley's fishing minigame to Minecraft, and more.",
   "authors": [
-    "bonker",
-    "kltyton"
+    "bonker"
   ],
-  "contact": {
-    "website": "https://github.com/kltyton/stardewfishing-fabric",
-    "repo": "https://github.com/kltyton/stardewfishing-fabric"
-  },
+  "contact": {},
   "license": "MIT",
-  "icon": "assets/stardew_fishing/icon.png",
+  "icon": "stardew_fishing.png",
   "environment": "*",
   "entrypoints": {
     "client": [

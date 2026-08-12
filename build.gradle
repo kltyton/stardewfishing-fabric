@@ -50,20 +50,12 @@ dependencies {
     include(modImplementation("maven.modrinth:forge-config-api-port:v8.0.2-1.20.1-Fabric"))
     modCompileOnly "curse.maven:fishing-real-348834:5273530"
     modCompileOnly "curse.maven:jobsaddon-682362:5043002"
-}
-
-tasks.register('layoutRegressionTest', JavaExec) {
-    dependsOn compileTestJava
-    classpath = files(sourceSets.test.output.classesDirs, sourceSets.main.output.classesDirs)
-    mainClass = 'com.bonker.stardewfishing.client.ui.layout.ContainerOverlayLayoutTest'
+    testImplementation "org.junit.jupiter:junit-jupiter:5.11.4"
+    testRuntimeOnly "org.junit.platform:junit-platform-launcher:1.11.4"
 }
 
 tasks.named('test') {
-    failOnNoDiscoveredTests = false
-}
-
-tasks.named('check') {
-    dependsOn layoutRegressionTest
+    useJUnitPlatform()
 }
 
 def resourceProperties = [

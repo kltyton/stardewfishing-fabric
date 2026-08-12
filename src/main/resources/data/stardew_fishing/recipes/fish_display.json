@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    ".#.",
+    "# #",
+    ".#."
+  ],
+  "key": {
+    "#": {
+      "tag": "minecraft:planks"
+    },
+    ".": {
+      "item": "minecraft:gold_nugget"
+    }
+  },
+  "result": {
+    "item": "stardew_fishing:fish_display",
+    "count": 1
+  }
+}
