@@ -2,6 +2,7 @@ package com.bonker.stardewfishing.client;
 
 import com.bonker.stardewfishing.SFConfig;
 import com.bonker.stardewfishing.StardewFishing;
+import com.bonker.stardewfishing.client.input.ScreenKeyMapping;
 import com.bonker.stardewfishing.common.init.SFBlockEntities;
 import com.bonker.stardewfishing.common.init.SFItems;
 import com.bonker.stardewfishing.common.init.SFParticles;
@@ -35,7 +36,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 
 public class StardewFishingClient implements ClientModInitializer {
-    public static final KeyMapping MINIGAME_BUTTON = new KeyMapping(
+    public static final KeyMapping MINIGAME_BUTTON = new ScreenKeyMapping(
             "key.stardew_fishing.minigame_button",
             InputConstants.Type.MOUSE,
             GLFW.GLFW_MOUSE_BUTTON_1,
