@@ -29,6 +29,7 @@
   "item.stardew_fishing.quality_bobber.tooltip": "大幅提高钓鱼获得的经验值",
   "item.stardew_fishing.quality_bobber.quality_food_tooltip": "同时提升钓到鱼类的品质",
   "item.stardew_fishing.fish_display.tooltip": "右键点击将你的珍贵鱼类展示出来",
+  "tag.item.stardew_fishing.in_fish_display": "鱼类展示物品",
   "item.stardew_fishing.goliath_grouper.tooltip": "分布于普通和寒冷海域",
   "item.stardew_fishing.vampire_payara.tooltip": "分布于丛林湖泊和河流",
   "item.stardew_fishing.golden_snook.tooltip": "分布于沙漠、草原和荒地的湖泊与河流",
