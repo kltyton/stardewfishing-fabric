@@ -7,11 +7,9 @@ import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
-import net.minecraft.world.Containers;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.item.ItemEntity;
@@ -107,14 +105,6 @@ public class FishDisplayBlock extends HorizontalDirectionalBlock implements Enti
                 spawnPos.y += pLevel.getRandom().nextFloat();
                 pLevel.addParticle(SFParticles.SPARKLE, spawnPos.x, spawnPos.y, spawnPos.z, 0, 0, 0);
             }
-        }
-    }
-
-    @Override
-    protected void affectNeighborsAfterRemoval(BlockState state, ServerLevel level, BlockPos pos, boolean movedByPiston) {
-        BlockEntity blockEntity = level.getBlockEntity(pos);
-        if (blockEntity instanceof FishDisplayBlockEntity fishDisplay) {
-            Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), fishDisplay.getItem());
         }
     }
 
