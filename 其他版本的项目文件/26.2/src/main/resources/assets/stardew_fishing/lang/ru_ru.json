@@ -82,6 +82,7 @@
   "tooltip.stardew_fishing.modifier.golden_chance_bonus": "Шанс золотого сундука: %s",
   "commands.stardew_fishing.disabled_minigame": "Мини-игра Stardew Fishing отключена",
   "commands.stardew_fishing.enabled_minigame": "Мини-игра Stardew Fishing включена",
+  "tag.item.stardew_fishing.in_fish_display": "Предметы для витрины",
   "key.categories.stardew_fishing": "Stardew Fishing",
   "key.stardew_fishing.minigame_button": "Управление зелёной полоской"
 }

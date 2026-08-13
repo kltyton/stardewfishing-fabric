@@ -27,7 +27,7 @@ public class SFBlocks {
         T block = Registry.register(BuiltInRegistries.BLOCK, blockKey, function.apply(props.setId(blockKey)));
 
         ResourceKey<Item> itemKey = ResourceKey.create(Registries.ITEM, StardewFishing.identifier(name));
-        BlockItem blockItem = new BlockItem(block, new Item.Properties().setId(itemKey));
+        BlockItem blockItem = new BlockItem(block, new Item.Properties().setId(itemKey).useBlockDescriptionPrefix());
         blockItem.registerBlocks(Item.BY_BLOCK, blockItem);
         Registry.register(BuiltInRegistries.ITEM, itemKey, blockItem);
         return block;

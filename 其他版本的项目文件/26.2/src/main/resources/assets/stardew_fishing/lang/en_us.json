@@ -30,6 +30,7 @@
   "item.stardew_fishing.quality_bobber.tooltip": "Greatly increases experience gained from fishing",
   "item.stardew_fishing.quality_bobber.quality_food_tooltip": "Also boosts the Quality of fish that you catch",
   "item.stardew_fishing.fish_display.tooltip": "Right click to put your prized fish on display",
+  "tag.item.stardew_fishing.in_fish_display": "Fish Display Items",
   "item.stardew_fishing.goliath_grouper.tooltip": "Found in normal and cold oceans",
   "item.stardew_fishing.vampire_payara.tooltip": "Found in jungle lakes and rivers",
   "item.stardew_fishing.golden_snook.tooltip": "Found in desert, savanna, and badlands lakes and rivers",
