@@ -8,7 +8,9 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.Clearable;
+import net.minecraft.world.Containers;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.TagValueOutput;
@@ -29,6 +31,19 @@ public class FishDisplayBlockEntity extends BlockEntity implements Clearable {
     public void setItem(ItemStack item) {
         this.item = item;
         setChanged();
+    }
+
+    @Override
+    public void preRemoveSideEffects(BlockPos pos, BlockState state) {
+        ItemStack displayed = item;
+        if (displayed.isEmpty()) {
+            return;
+        }
+        item = ItemStack.EMPTY;
+        Level level = getLevel();
+        if (level != null && !level.isClientSide()) {
+            Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), displayed);
+        }
     }
 
     @Override

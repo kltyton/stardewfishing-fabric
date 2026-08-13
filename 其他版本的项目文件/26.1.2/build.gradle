@@ -36,12 +36,19 @@ tasks.register('layoutRegressionTest', JavaExec) {
     mainClass = 'com.bonker.stardewfishing.client.ui.layout.ContainerOverlayLayoutTest'
 }
 
+tasks.register('fishDisplayLifecycleTest', JavaExec) {
+    dependsOn compileTestJava
+    classpath = files(sourceSets.test.output.classesDirs, sourceSets.main.output.classesDirs)
+    mainClass = 'com.bonker.stardewfishing.common.block.FishDisplayLifecycleTest'
+}
+
 tasks.named('test') {
     failOnNoDiscoveredTests = false
 }
 
 tasks.named('check') {
     dependsOn layoutRegressionTest
+    dependsOn fishDisplayLifecycleTest
 }
 
 def resourceProperties = [
