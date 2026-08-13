@@ -26,8 +26,10 @@ public final class SFBlocks {
         Registry.register(Registries.BLOCK, blockKey, block);
 
         RegistryKey<Item> itemKey = RegistryKey.of(RegistryKeys.ITEM, id);
-        Registry.register(Registries.ITEM, itemKey,
-                new BlockItem(block, new Item.Settings().registryKey(itemKey).useBlockPrefixedTranslationKey()));
+        BlockItem blockItem = new BlockItem(block,
+                new Item.Settings().registryKey(itemKey).useBlockPrefixedTranslationKey());
+        blockItem.appendBlocks(Item.BLOCK_ITEMS, blockItem);
+        Registry.register(Registries.ITEM, itemKey, blockItem);
         return block;
     }
 }
