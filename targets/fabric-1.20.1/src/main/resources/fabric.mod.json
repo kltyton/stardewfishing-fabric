@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "id": "stardew_fishing",
+  "version": "${mod_version}",
+  "name": "Stardew Fishing",
+  "description": "Brings Stardew Valley's fishing minigame to Minecraft, and more.",
+  "authors": [
+    "bonker"
+  ],
+  "contact": {},
+  "license": "MIT",
+  "icon": "stardew_fishing.png",
+  "environment": "*",
+  "entrypoints": {
+    "client": [
+      "com.bonker.stardewfishing.client.StardewFishingClient"
+    ],
+    "main": [
+      "com.bonker.stardewfishing.StardewFishing"
+    ]
+  },
+  "mixins": [
+    "stardew_fishing.mixins.json"
+  ],
+  "depends": {
+    "java": ">=17",
+    "fabricloader": "${loader_version_range}",
+    "fabric-api": ">=0.92.11+1.20.1",
+    "forgeconfigapiport": ">=8.0.2",
+    "minecraft": "${minecraft_version_range}"
+  },
+  "suggests": {
+    "tide": "*",
+    "netherdepthsupgrade": "*",
+    "fishingreal": "*",
+    "jobsaddon": "*"
+  },
+  "accessWidener": "stardew_fishing.accesswidener"
+}

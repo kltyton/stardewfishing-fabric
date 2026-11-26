@@ -1,0 +1,24 @@
+plugins {
+    groovy
+    `java-gradle-plugin`
+}
+sourceSets.main {
+    java.srcDir("../integrations/shared/src/main/java")
+    resources.srcDir("../integrations/shared/src/main/resources")
+}
+repositories { mavenCentral() }
+dependencies {
+    implementation(localGroovy())
+    implementation("com.electronwill.night-config:toml:3.8.3")
+}
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+}
+tasks.withType<GroovyCompile>().configureEach { groovyOptions.encoding = "UTF-8" }
+gradlePlugin {
+    plugins.create("temple") {
+        id = "io.github.kltyton.temple"
+        implementationClass = "io.github.kltyton.temple.gradle.TemplePlugin"
+    }
+}

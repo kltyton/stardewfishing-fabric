@@ -1,0 +1,21 @@
+pluginManagement {
+    repositories {
+        gradlePluginPortal()
+        maven { url = 'https://maven.fabricmc.net/' }
+        maven { url = 'https://maven.neoforged.net/releases' }
+        maven { url = 'https://maven.minecraftforge.net/' }
+        mavenCentral()
+    }
+}
+def identity = new Properties()
+file('../../gradle.properties').withReader('UTF-8') { identity.load(it) }
+rootProject.name = identity.getProperty('mod_id') + '-' + rootDir.name
+
+include ':common'
+def selection = file('../../.temple/active-target')
+def activeTarget = selection.isFile() ? selection.getText('UTF-8').trim() : identity.getProperty('temple_default_target')
+def active = activeTarget == rootDir.name
+def commonContext = active ? file('../../common') : file("../../common/.gradle/contexts/${rootDir.name}")
+commonContext.mkdirs()
+project(':common').projectDir = commonContext
+project(':common').buildFileName = active ? 'build.gradle' : '../../../build.gradle'

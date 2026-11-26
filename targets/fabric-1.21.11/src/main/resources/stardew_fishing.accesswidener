@@ -1,0 +1,8 @@
+accessWidener v2 named
+
+# Fishing sounds are replaced before sample resolution, so use the values from the sound packet.
+accessible field net/minecraft/client/sound/AbstractSoundInstance volume F
+accessible field net/minecraft/client/sound/AbstractSoundInstance pitch F
+
+# The minigame animates while the integrated world is paused.
+accessible field net/minecraft/client/render/RenderTickCounter$Dynamic tickProgress F

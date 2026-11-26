@@ -1,0 +1,25 @@
+plugins {
+    id 'fabric-loom' version "${loom_version}"
+    id 'java-library'
+    id 'me.modmuss50.mod-publish-plugin' version "${publish_plugin_version}"
+}
+
+apply from: file('../../gradle/target-conventions/fabric.gradle')
+
+repositories {
+    maven {
+        name = 'Fuzs Mod Resources'
+        url = 'https://raw.githubusercontent.com/Fuzss/modresources/main/maven/'
+        content { includeGroup 'fuzs.forgeconfigapiport' }
+    }
+}
+
+dependencies {
+    implementation "fuzs.forgeconfigapiport:forgeconfigapiport-fabric:${forge_config_api_port_version}"
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.11.4'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher:1.11.4'
+}
+
+loom { accessWidenerPath = file('src/main/resources/stardew_fishing.accesswidener') }
+
+tasks.named('test', Test) { useJUnitPlatform() }

@@ -1,0 +1,32 @@
+plugins {
+    id 'fabric-loom' version "${loom_version}"
+    id 'java-library'
+    id 'me.modmuss50.mod-publish-plugin' version "${publish_plugin_version}"
+}
+
+apply from: file('../../gradle/target-conventions/fabric.gradle')
+
+loom { accessWidenerPath = file('src/main/resources/stardew_fishing.accesswidener') }
+
+tasks.register('layoutRegressionTest', JavaExec) {
+    dependsOn tasks.named('testClasses')
+    javaLauncher = javaToolchains.launcherFor(java.toolchain)
+    classpath = files(sourceSets.test.output.classesDirs, project(':common').sourceSets.main.output.classesDirs)
+    mainClass = 'com.bonker.stardewfishing.client.ui.layout.ContainerOverlayLayoutTest'
+}
+
+tasks.register('fishDisplayItemRegistrationTest', JavaExec) {
+    dependsOn tasks.named('testClasses')
+    javaLauncher = javaToolchains.launcherFor(java.toolchain)
+    classpath = files(sourceSets.test.output.classesDirs, project(':common').sourceSets.main.output.classesDirs)
+    mainClass = 'com.bonker.stardewfishing.registry.FishDisplayItemRegistrationTest'
+    args project(':common').templeSourceDirectories.findResult { root ->
+        def source = new File(root, 'com/bonker/stardewfishing/registry/SFBlocks.java')
+        source.isFile() ? source.absolutePath : null
+    }
+}
+
+tasks.named('test', Test) { failOnNoDiscoveredTests = false }
+tasks.named('check') {
+    dependsOn 'layoutRegressionTest', 'fishDisplayItemRegistrationTest'
+}

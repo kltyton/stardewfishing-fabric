@@ -1,0 +1,113 @@
+package io.github.kltyton.temple.workspace
+
+import java.nio.file.Path
+import io.github.kltyton.temple.workspace.sources.SourceBlueprints
+
+final class ProjectCreation {
+    static File create(File template, File destination, Properties identity, Collection<String> chosen,
+                       List<Map<String, String>> plans = []) {
+        File output = destination.canonicalFile
+        Path base = template.canonicalFile.toPath()
+        if (output.exists() || output.toPath().startsWith(base)) {
+            throw new IllegalArgumentException("Choose a new directory outside the template: ${output}")
+        }
+        ProjectFiles.identity(identity)
+        BuildScripts.Dsl requestedDsl = BuildScripts.Dsl.parse(identity.getProperty('temple_build_dsl', 'groovy'))
+        if (new File(template, 'build.gradle.kts').isFile() && requestedDsl == BuildScripts.Dsl.GROOVY) {
+            throw new IllegalArgumentException('This source project uses Kotlin DSL. Select Kotlin DSL or use the original KltytonTemple template for Groovy.')
+        }
+        List<TargetDefinition> all = ProjectFiles.targets(template)
+        Set<String> selected = chosen.empty ? all.collect { it.id } as Set : chosen as Set
+        if (!all.collect { it.id }.containsAll(selected)) { throw new IllegalArgumentException('Unknown target selection') }
+        String preferred = identity.getProperty('temple_default_target')
+        String initialTarget = plans.empty ? (preferred ?: selected.first()) : TargetPlan.defaultTarget(plans, preferred)
+        if (plans.empty && !selected.contains(initialTarget)) {
+            throw new IllegalArgumentException("Default editing target is not selected: ${initialTarget}")
+        }
+        if (!plans.empty && (plans.collect { it.blueprint } as Set) != selected) {
+            throw new IllegalArgumentException('Target plan does not match selected blueprints')
+        }
+        Properties old = ProjectFiles.read(new File(template, 'gradle.properties'))
+        String oldPackage = old.getProperty('mod_java_package', old.getProperty('mod_group_id'))
+        String newPackage = identity.getProperty('mod_java_package', identity.getProperty('mod_group_id'))
+        Map<String, File> blueprints = [:]
+        TargetPlan.BLUEPRINTS.each { name ->
+            File blueprint = new File(template, "targets/${name}")
+            if (blueprint.isDirectory()) {
+                ProjectFiles.distributableFiles(blueprint).each { source ->
+                    String relative = blueprint.toPath().relativize(source.toPath()).toString().replace('\\', '/')
+                    blueprints["gradle/target-blueprints/${name}/${relative}".toString()] = source
+                }
+            }
+        }
+        List<File> files = ProjectFiles.projectFiles(template)
+        files = files.findAll { File file ->
+            String relative = base.relativize(file.toPath()).toString().replace('\\', '/')
+            !blueprints.containsKey(relative) && (!relative.startsWith('targets/') || relative.tokenize('/')[1] in selected)
+        }
+        output.mkdirs()
+        def copyFile = { File source, String relative ->
+            boolean gameSource = relative.tokenize('/')[0] in ['common', 'targets']
+            gameSource |= relative.startsWith('gradle/target-blueprints/')
+            if (gameSource) { relative = relative.replace(oldPackage.replace('.', '/'), newPackage.replace('.', '/')) }
+            File target = new File(output, relative)
+            target.parentFile.mkdirs()
+            if ((source.name.endsWith('.java') || source.name.endsWith('.java.template')) && gameSource) {
+                target.setText(source.getText('UTF-8').replace(oldPackage, newPackage), 'UTF-8')
+            } else { ProjectFiles.copy(source, target) }
+        }
+        files.each { source -> copyFile(source, base.relativize(source.toPath()).toString().replace('\\', '/')) }
+        blueprints.each { relative, source -> copyFile(source, relative) }
+        identity.each { key, value -> old.setProperty(key.toString(), value.toString()) }
+        if (old.containsKey('mod_java_package')) { old.setProperty('mod_java_package', newPackage) }
+        String oldEntry = old.getProperty('mod_entry_class')
+        if (oldEntry?.startsWith(oldPackage + '.')) {
+            old.setProperty('mod_entry_class', newPackage + oldEntry.substring(oldPackage.length()))
+        }
+        old.remove('publish_curseforge_project_id')
+        old.remove('publish_modrinth_project_id')
+        old.setProperty('temple_default_target', initialTarget)
+        ProjectFiles.write(new File(output, 'gradle.properties'), old)
+        File state = new File(output, '.temple/active-target')
+        state.parentFile.mkdirs()
+        state.setText(initialTarget + '\n', 'UTF-8')
+        BuildScripts.createProject(output.toPath())
+        if (!plans.empty) TargetPlan.apply(output.toPath(), plans, true, initialTarget)
+        SourceBlueprints.selectLoaders(output.toPath(), ProjectFiles.targets(output).collect { it.loader })
+        output
+    }
+
+    static TargetDefinition add(File root, TargetDefinition blueprint, Properties changes) {
+        String minecraft = changes.getProperty('minecraft_version')
+        if (!(minecraft ==~ /[0-9]+(\.[0-9]+)*/)) { throw new IllegalArgumentException('Invalid Minecraft version') }
+        File destination = new File(root, "targets/${blueprint.loader}-${minecraft}")
+        if (destination.exists()) { throw new IllegalArgumentException("Target already exists: ${destination}") }
+        if (blueprint.loader == 'fabric' && !changes.getProperty('fabric_api_version')) {
+            throw new IllegalArgumentException('Supply the matching Fabric API version')
+        }
+        Properties values = new Properties()
+        values.putAll(blueprint.properties)
+        values.putAll(changes)
+        values.setProperty('loader', blueprint.loader)
+        values.setProperty('minecraft_version_range', "[${minecraft}]")
+        ['loader_version', 'java_version', 'gradle_java_version'].each { key ->
+            if (!values.getProperty(key)) { throw new IllegalArgumentException("Missing ${key}") }
+        }
+        SourceBlueprints.activate(root.toPath(), blueprint.loader)
+        ProjectFiles.distributableFiles(blueprint.directory).each { source ->
+            File target = new File(destination, blueprint.directory.toPath().relativize(source.toPath()).toString())
+            ProjectFiles.copy(source, target)
+        }
+        ProjectFiles.write(new File(destination, 'gradle.properties'), values)
+        String version = changes.getProperty('wrapper_version')
+        if (version) {
+            if (!(version ==~ /[0-9]+(\.[0-9]+)+/)) { throw new IllegalArgumentException('Invalid Gradle version') }
+            File wrapper = new File(destination, 'gradle/wrapper/gradle-wrapper.properties')
+            Properties wrapperValues = ProjectFiles.read(wrapper)
+            wrapperValues.setProperty('distributionUrl', "https://services.gradle.org/distributions/gradle-${version}-bin.zip")
+            wrapperValues.remove('distributionSha256Sum')
+            ProjectFiles.write(wrapper, wrapperValues)
+        }
+        ProjectFiles.targets(root).find { it.directory == destination.canonicalFile }
+    }
+}

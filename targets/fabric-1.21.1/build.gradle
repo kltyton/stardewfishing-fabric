@@ -1,0 +1,43 @@
+plugins {
+    id 'fabric-loom' version "${loom_version}"
+    id 'java-library'
+    id 'me.modmuss50.mod-publish-plugin' version "${publish_plugin_version}"
+}
+
+apply from: file('../../gradle/target-conventions/fabric.gradle')
+
+repositories {
+    maven {
+        name = 'Modrinth'
+        url = 'https://api.modrinth.com/maven'
+        content { includeGroup 'maven.modrinth' }
+    }
+}
+
+dependencies {
+    modCompileOnly 'maven.modrinth:tide:2.1.1-fabric,1.21.1'
+    modCompileOnly 'maven.modrinth:cobblemon:1.7.3-fabric,1.21.1'
+    modCompileOnly 'maven.modrinth:nether-depths-upgrade:3.1.9+1.21-fabric'
+    modCompileOnly 'maven.modrinth:fishing-real:1.9.1-fabric,1.21.1'
+}
+
+loom { accessWidenerPath = file('src/main/resources/stardew_fishing.accesswidener') }
+
+tasks.register('layoutRegressionTest', JavaExec) {
+    dependsOn tasks.named('testClasses')
+    javaLauncher = javaToolchains.launcherFor(java.toolchain)
+    classpath = files(sourceSets.test.output.classesDirs, project(':common').sourceSets.main.output.classesDirs)
+    mainClass = 'com.bonker.stardewfishing.client.ui.layout.ContainerOverlayLayoutTest'
+}
+
+tasks.register('minigameKeyRegressionTest', JavaExec) {
+    dependsOn tasks.named('testClasses')
+    javaLauncher = javaToolchains.launcherFor(java.toolchain)
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'com.bonker.stardewfishing.client.input.MinigameKeyMappingTest'
+}
+
+tasks.named('test', Test) { failOnNoDiscoveredTests = false }
+tasks.named('check') {
+    dependsOn 'layoutRegressionTest', 'minigameKeyRegressionTest'
+}

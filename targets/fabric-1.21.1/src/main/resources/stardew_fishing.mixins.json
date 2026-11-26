@@ -1,0 +1,24 @@
+{
+  "required": true,
+  "package": "com.bonker.stardewfishing.mixin",
+  "plugin": "com.bonker.stardewfishing.mixin.OptionalModMixinPlugin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [
+    "compat.tide.TideMinigameMixin",
+    "AbstractContainerMenuMixin",
+    "FishingHookAccessor",
+    "FishingHookMixin",
+    "PlayerAttributesMixin",
+    "LavaFishingBobberEntityMixin",
+    "PokeRodFishingBobberEntityMixin"
+  ],
+  "client": [
+    "SoundEngineMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  },
+  "overwrites": {
+    "requireAnnotations": true
+  }
+}
